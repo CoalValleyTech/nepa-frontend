@@ -63,17 +63,17 @@ const Header = () => {
               <circle cx="17" cy="7" r="1.2" stroke="currentColor" strokeWidth="1.5" fill="none" />
             </svg>
           </a>
-          {/* Twitter - outlined modern icon */}
+          {/* X - outlined modern icon */}
           <a
-            href="https://twitter.com"
+            href="https://x.com"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Twitter"
+            aria-label="X"
             className="hover:text-secondary-300 text-cream-100 transition-colors"
           >
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              <path d="M8 15c6 0 9-5 9-9 0-.14 0-.28-.01-.42A6.48 6.48 0 0 0 19 4.5a6.36 6.36 0 0 1-1.89.52A3.28 3.28 0 0 0 18.5 3.5a6.56 6.56 0 0 1-2.08.8A3.28 3.28 0 0 0 12 8.28c0 .26.03.52.08.76A9.32 9.32 0 0 1 5 4.5s-4 9 5 13c-1.38.94-3.13 1.5-5 1.5.65 0 1.28-.07 1.89-.21A9.29 9.29 0 0 0 12 21c7.5 0 11.5-6.22 11.5-11.62 0-.18-.01-.36-.02-.54A8.18 8.18 0 0 0 22 5.92a8.36 8.36 0 0 1-2.36.65A4.13 4.13 0 0 0 22 4.5z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <path d="M8 8L16 16M16 8L8 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </a>
         </div>
