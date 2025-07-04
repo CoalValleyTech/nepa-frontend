@@ -1,7 +1,7 @@
-import HomeStatic from './pages/HomeStatic';
+import Home from './pages/Home';
 
 function App() {
-  return <HomeStatic />;
+  return <Home />;
 }
 
 export default App; 
