@@ -1,6 +1,9 @@
+import Header from '../components/Header';
+
 export default function Home() {
   return (
     <div className="min-h-screen">
+      <Header />
       {/* Main Content Section with Scores and Schedule Sidebars */}
       <section className="py-8 bg-cream-50">
         <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
