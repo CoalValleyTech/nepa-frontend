@@ -1,8 +1,4 @@
-import React from 'react';
-import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-
-const Home = () => {
+export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Main Content Section with Scores and Schedule Sidebars */}
@@ -65,6 +61,4 @@ const Home = () => {
       </section>
     </div>
   );
-}
-
-export default Home 
+} 
