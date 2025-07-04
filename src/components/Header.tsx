@@ -51,8 +51,8 @@ const Header = () => {
       <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between py-3 px-4">
         {/* Logo and Site Name */}
         <div className="flex items-center mb-2 sm:mb-0">
-          <img src="/span-logo.png" alt="Span SportsHub Logo" className="h-12 w-auto mr-3" />
-          <span className="text-2xl font-extrabold tracking-tight">Span SportsHub</span>
+          <img src="/span-logo.png" alt="Span SportsHub Logo" className="h-20 w-auto mr-3" />
+          <span className="text-2xl font-extrabold tracking-tight text-cream-100">Span SportsHub</span>
         </div>
         {/* Navigation */}
         <nav className="flex space-x-6 mb-2 sm:mb-0">
@@ -60,7 +60,7 @@ const Header = () => {
             <Link
               key={link.path}
               to={link.path}
-              className="text-lg font-bold hover:underline hover:text-green-200 transition-colors"
+              className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
             >
               {link.label}
             </Link>
@@ -68,18 +68,43 @@ const Header = () => {
         </nav>
         {/* Social Icons */}
         <div className="flex space-x-4">
-          {socialLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={link.label}
-              className="hover:text-green-200 transition-colors"
-            >
-              {link.icon}
-            </a>
-          ))}
+          <a
+            href="https://facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="hover:text-secondary-300 text-cream-100 transition-colors"
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="none" />
+              <path d="M15.5 8.5H14V7.5C14 7.22 14.22 7 14.5 7H15.5V5H14.5C13.12 5 12 6.12 12 7.5V8.5H10.5V11H12V19H14V11H15.5L16 8.5H14Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            </svg>
+          </a>
+          <a
+            href="https://instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="hover:text-secondary-300 text-cream-100 transition-colors"
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="2" fill="none" />
+              <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" fill="none" />
+              <circle cx="17" cy="7" r="1.5" stroke="currentColor" strokeWidth="2" fill="none" />
+            </svg>
+          </a>
+          <a
+            href="https://x.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="X"
+            className="hover:text-secondary-300 text-cream-100 transition-colors"
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="none" />
+              <path d="M8 8L16 16M16 8L8 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </a>
         </div>
 
         {/* Mobile menu button - Only show on mobile, positioned to not interfere with logo */}
