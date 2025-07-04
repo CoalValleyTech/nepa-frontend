@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles for the NEPA football broadcasting app */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-cream-100 text-primary-500;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Button styles for the app */
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-cream-100 font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-500 hover:bg-secondary-600 text-cream-100 font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-cream-100 font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  /* Card styles for game displays */
+  .game-card {
+    @apply bg-cream-100 rounded-lg shadow-md p-6 border border-primary-200 hover:shadow-lg transition-shadow duration-200;
+  }
+  
+  /* Score display styles */
+  .score-display {
+    @apply text-4xl font-bold text-primary-500;
+  }
+  
+  /* Team name styles */
+  .team-name {
+    @apply text-lg font-semibold text-primary-600;
+  }
+  
+  /* Live indicator styles */
+  .live-indicator {
+    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700;
+  }
+  
+  .live-dot {
+    @apply w-2 h-2 bg-secondary-500 rounded-full mr-1 animate-pulse;
+  }
+}
+
+/* Custom utility styles */
+@layer utilities {
+  /* Text gradient for team names */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
+  }
+  
+  /* Field pattern background */
+  .field-pattern {
+    background-image: 
+      linear-gradient(90deg, transparent 0%, transparent 49%, rgba(1, 68, 33, 0.1) 50%, transparent 51%, transparent 100%),
+      linear-gradient(0deg, transparent 0%, transparent 49%, rgba(1, 68, 33, 0.1) 50%, transparent 51%, transparent 100%);
+    background-size: 20px 20px;
+  }
+} 
