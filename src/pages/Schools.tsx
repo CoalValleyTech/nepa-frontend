@@ -1,4 +1,6 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
+import Header from '../components/Header';
 
 const socialLinks = [
   {
@@ -37,28 +39,7 @@ const socialLinks = [
 
 const Schools = () => (
   <div className="min-h-screen">
-    {/* Header (copied from HomeStatic) */}
-    <header className="bg-green-800 shadow p-4 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-      <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-        <img src="/HeaderLogo.png" alt="Logo" className="h-16 sm:h-20 w-auto mx-auto sm:mx-0" />
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-cream-100 tracking-wide text-center sm:text-left">Span SportsHub</h1>
-      </div>
-      <nav className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-8 w-full sm:w-auto">
-        <ul className="flex flex-wrap justify-center sm:justify-start space-x-0 sm:space-x-8 gap-y-2">
-          <li><Link to="/" className="text-cream-100 text-lg sm:text-xl font-bold hover:underline">Home</Link></li>
-          <li><Link to="/schools" className="text-cream-100 text-lg sm:text-xl font-bold hover:underline">Schools</Link></li>
-          <li><Link to="/sports" className="text-cream-100 text-lg sm:text-xl font-bold hover:underline">Sports</Link></li>
-          <li><Link to="/schedule" className="text-cream-100 text-lg sm:text-xl font-bold hover:underline">Schedule</Link></li>
-        </ul>
-        <div className="flex items-center justify-center sm:justify-start space-x-4 ml-0 sm:ml-6 mt-2 sm:mt-0">
-          {socialLinks.map((link) => (
-            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
-              {link.svg}
-            </a>
-          ))}
-        </div>
-      </nav>
-    </header>
+    <Header />
     {/* Schools content */}
     <div className="flex flex-col items-center justify-center bg-cream-50 py-16">
       <h1 className="text-3xl font-bold text-primary-600 mb-4">Schools</h1>
