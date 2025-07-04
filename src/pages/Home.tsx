@@ -3,21 +3,10 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 const Home = () => {
-  // Sample scores data (set to empty)
+  // No scores, schedule, or articles
   const scores = [];
-
-  // Sample schedule data (set to empty)
   const schedule = [];
-
-  // Sample articles data (set to one empty/null article)
-  const articles = [
-    {
-      title: '',
-      excerpt: '',
-      date: '',
-      category: ''
-    }
-  ];
+  const articles = [];
 
   // State for rotating articles
   const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
@@ -30,13 +19,11 @@ const Home = () => {
       <section className="py-8 bg-cream-50">
         <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-            {/* Left Side - Single Article (null/empty) */}
+            {/* Left Side - Latest News (no articles) */}
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-primary-500 mb-6">Latest News</h2>
-              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg">
-                <article className="transition-opacity duration-500 text-center text-primary-400 text-lg font-semibold">
-                  Content coming soon.
-                </article>
+              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-400 text-lg font-semibold">
+                No news articles to display.
               </div>
             </div>
             {/* Vertical Line Divider */}
