@@ -57,18 +57,33 @@ const Sports = () => {
         <main className="flex-1 flex flex-col items-center justify-center bg-cream-50 py-16">
           <h1 className="text-3xl font-bold text-primary-600 mb-4">Sports</h1>
           {showDivisions ? (
-            <div className="w-full max-w-md bg-white rounded-lg shadow p-6 mt-4">
-              <ul className="space-y-6">
+            <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 mt-4">
+              <ul className="space-y-10">
                 {divisions.map((division) => (
-                  <li key={division.name} className="">
-                    <h3 className="text-lg font-bold text-primary-700 mb-2">{division.name}</h3>
-                    <ul className="space-y-1 ml-4">
-                      {division.teams.map((team) => (
-                        <li key={team} className="px-3 py-1 rounded bg-cream-100 text-primary-700 font-medium shadow-sm">
-                          {team}
-                        </li>
-                      ))}
-                    </ul>
+                  <li key={division.name}>
+                    <h3 className="text-xl font-bold text-primary-700 mb-4 border-b border-primary-200 pb-2">{division.name}</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-primary-200">
+                        <thead>
+                          <tr className="bg-cream-100">
+                            <th className="px-4 py-2 text-left text-primary-700 font-semibold">Team</th>
+                            <th className="px-4 py-2 text-center text-primary-700 font-semibold">Wins</th>
+                            <th className="px-4 py-2 text-center text-primary-700 font-semibold">Losses</th>
+                            <th className="px-4 py-2 text-center text-primary-700 font-semibold">Win %</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {division.teams.map((team) => (
+                            <tr key={team} className="even:bg-cream-50">
+                              <td className="px-4 py-2 font-medium text-primary-800 whitespace-nowrap">{team}</td>
+                              <td className="px-4 py-2 text-center text-primary-700">0</td>
+                              <td className="px-4 py-2 text-center text-primary-700">0</td>
+                              <td className="px-4 py-2 text-center text-primary-700">0.000</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </li>
                 ))}
               </ul>
