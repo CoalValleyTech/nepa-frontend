@@ -2,9 +2,33 @@ import Header from '../components/Header';
 import { useState } from 'react';
 
 const divisions = [
-  'Division 1',
-  'Division 2',
-  'Division 3',
+  {
+    name: 'Division 1',
+    teams: [
+      'Delaware Valley',
+      'Scranton',
+      'Scranton Prep',
+      'Valley View',
+    ],
+  },
+  {
+    name: 'Division 2',
+    teams: [
+      'North Pocono',
+      'Wallenpaupack',
+      'West Scranton',
+      'Western Wayne',
+    ],
+  },
+  {
+    name: 'Division 3',
+    teams: [
+      'North Pocono',
+      'Wallenpaupack',
+      'West Scranton',
+      'Western Wayne',
+    ],
+  },
 ];
 
 const Sports = () => {
@@ -34,11 +58,17 @@ const Sports = () => {
           <h1 className="text-3xl font-bold text-primary-600 mb-4">Sports</h1>
           {showDivisions ? (
             <div className="w-full max-w-md bg-white rounded-lg shadow p-6 mt-4">
-              <h2 className="text-xl font-bold text-primary-600 mb-4">LIAA Divisions</h2>
-              <ul className="space-y-2">
+              <ul className="space-y-6">
                 {divisions.map((division) => (
-                  <li key={division} className="px-4 py-2 rounded bg-cream-100 text-primary-700 font-semibold shadow-sm">
-                    {division}
+                  <li key={division.name} className="">
+                    <h3 className="text-lg font-bold text-primary-700 mb-2">{division.name}</h3>
+                    <ul className="space-y-1 ml-4">
+                      {division.teams.map((team) => (
+                        <li key={team} className="px-3 py-1 rounded bg-cream-100 text-primary-700 font-medium shadow-sm">
+                          {team}
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>
