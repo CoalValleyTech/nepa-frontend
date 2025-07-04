@@ -3,16 +3,6 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 const Home = () => {
-  // No scores, schedule, or articles
-  const scores = [];
-  const schedule = [];
-  const articles = [];
-
-  // State for rotating articles
-  const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
-
-  // Remove article rotation effect since only one/null article
-  // ... existing code ...
   return (
     <div className="min-h-screen">
       {/* Main Content Section with Scores and Schedule Sidebars */}
