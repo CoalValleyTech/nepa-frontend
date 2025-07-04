@@ -19,11 +19,11 @@ const Home = () => {
       <section className="py-8 bg-cream-50">
         <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-            {/* Left Side - Latest News (no articles) */}
+            {/* Left Side - Welcome Message */}
             <div className="flex-1">
-              <h2 className="text-3xl font-bold text-primary-500 mb-6">Latest News</h2>
-              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-400 text-lg font-semibold">
-                No news articles to display.
+              <h2 className="text-3xl font-bold text-primary-500 mb-6">Welcome</h2>
+              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-600 text-lg font-semibold">
+                Welcome to Span SportsHub! Stay tuned for updates and news coming soon.
               </div>
             </div>
             {/* Vertical Line Divider */}
