@@ -34,7 +34,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                   <img 
                     src="/span-logo.png" 
                     alt="SPAN Logo" 
-                    className="w-32 h-32 object-contain mx-auto mb-4"
+                    className="w-48 h-48 object-contain mx-auto mb-4"
                   />
                   <h2 className="text-3xl font-bold text-cream-100">Welcome to SPAN SportsHub!</h2>
                 </div>
@@ -48,19 +48,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               </div>
               <div className="space-y-6 text-cream-100 text-lg">
                 <p>
-                  Welcome to the Scranton Public Athletic Network! We're excited to bring you the latest sports coverage for the greater Scranton area.
-                </p>
-                <p>
-                  Our platform provides:
-                </p>
-                <ul className="list-disc list-inside space-y-2 ml-6 text-base">
-                  <li>Live scores and statistics</li>
-                  <li>Team schedules and results</li>
-                  <li>Player statistics and leaderboards</li>
-                  <li>Live streaming and radio broadcasts</li>
-                </ul>
-                <p>
-                  Currently covering Football and Girls' Tennis for the Fall 2025 season. More sports coming soon!
+                  Welcome to SPAN Sports Hub! We provide statistics, scores, and more for all high schools part of the Lackawanna Interscholastic Athletics Association. Stay tuned as we enter the fall sports season, as we provide you with scores, stats, and leaderboards for Girls Tennis and Football!
                 </p>
               </div>
               <div className="mt-8 flex justify-end">
