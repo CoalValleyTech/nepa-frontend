@@ -27,26 +27,33 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
       {/* Popup Modal */}
       {showPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-bold text-primary-700">Welcome to SPAN SportsHub!</h2>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src="/span-logo.png" 
+                    alt="SPAN Logo" 
+                    className="w-16 h-16 object-contain"
+                  />
+                  <h2 className="text-3xl font-bold text-green-700">Welcome to SPAN SportsHub!</h2>
+                </div>
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none"
+                  className="text-gray-400 hover:text-gray-600 text-3xl font-bold leading-none"
                   aria-label="Close popup"
                 >
                   ×
                 </button>
               </div>
-              <div className="space-y-4 text-primary-600">
+              <div className="space-y-6 text-gray-700 text-lg">
                 <p>
                   Welcome to the Scranton Public Athletic Network! We're excited to bring you the latest sports coverage for the greater Scranton area.
                 </p>
                 <p>
                   Our platform provides:
                 </p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
+                <ul className="list-disc list-inside space-y-2 ml-6 text-base">
                   <li>Live scores and statistics</li>
                   <li>Team schedules and results</li>
                   <li>Player statistics and leaderboards</li>
@@ -56,10 +63,10 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                   Currently covering Football and Girls' Tennis for the Fall 2025 season. More sports coming soon!
                 </p>
               </div>
-              <div className="mt-6 flex justify-end">
+              <div className="mt-8 flex justify-end">
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors font-semibold"
+                  className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
                 >
                   Get Started
                 </button>
