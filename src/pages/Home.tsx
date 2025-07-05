@@ -46,18 +46,18 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-8">Our Mission</h2>
           <div className="text-lg leading-relaxed space-y-4">
             <p>
-              At NEPA Football Broadcast, we are dedicated to showcasing the passion, talent, and community spirit 
-              of high school football throughout Northeastern Pennsylvania. Our mission is to provide comprehensive 
-              coverage that celebrates the achievements of student-athletes, coaches, and teams while connecting 
-              families, alumni, and fans with the excitement of Friday night lights.
+            At SPAN, we are dedicated to providing the greater Scranton Area with stats, Scores,
+            Leaderboards, and more, and providing a platform where all sports can be recognized equally. It is important to us that we keep our services free and allow anyone to access our content wherever they are at any time. 
+            Whether it is seeing that latest score update from your favorite tennis team, to seeing how many yards your son ran during his most recent game, or even seeing where you can stream your favorite sports, we want to be 
+            the HUB for all things LIAA!
+
             </p>
             <p>
-              Through live broadcasting, detailed statistics, and engaging content, we strive to preserve the 
-              rich tradition of high school football in our region while building a platform that supports 
-              the growth and development of the sport for future generations.
+            We are determined to preserve the culture and richness of high school sports that the greater Scranton Area was built on, while also launching it into the next generation. We want to support
+            all student-athletes by building a platform for all!
             </p>
             <p className="text-secondary-300 font-semibold">
-              Supporting NEPA Football - One Game at a Time
+              Supporting NEPA Sports - One Game at a Time
             </p>
           </div>
         </div>
