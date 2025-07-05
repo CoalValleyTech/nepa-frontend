@@ -27,26 +27,26 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
       {/* Popup Modal */}
       {showPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-primary-500 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center space-x-4">
+                <div className="flex-1 text-center">
                   <img 
                     src="/span-logo.png" 
                     alt="SPAN Logo" 
-                    className="w-16 h-16 object-contain"
+                    className="w-32 h-32 object-contain mx-auto mb-4"
                   />
-                  <h2 className="text-3xl font-bold text-green-700">Welcome to SPAN SportsHub!</h2>
+                  <h2 className="text-3xl font-bold text-cream-100">Welcome to SPAN SportsHub!</h2>
                 </div>
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="text-gray-400 hover:text-gray-600 text-3xl font-bold leading-none"
+                  className="text-cream-100 hover:text-cream-200 text-3xl font-bold leading-none ml-4"
                   aria-label="Close popup"
                 >
                   ×
                 </button>
               </div>
-              <div className="space-y-6 text-gray-700 text-lg">
+              <div className="space-y-6 text-cream-100 text-lg">
                 <p>
                   Welcome to the Scranton Public Athletic Network! We're excited to bring you the latest sports coverage for the greater Scranton area.
                 </p>
@@ -66,7 +66,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
+                  className="bg-secondary-500 text-white px-8 py-3 rounded-lg hover:bg-secondary-600 transition-colors font-semibold text-lg"
                 >
                   Get Started
                 </button>
