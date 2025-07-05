@@ -1,6 +1,15 @@
 import Header from '../components/Header';
+import { useState } from 'react';
 
 export default function Home() {
+  const [expanded, setExpanded] = useState(false);
+  const article = {
+    title: 'Friday Night Lights: Scranton vs. Valley View',
+    date: 'April 19, 2024',
+    preview: 'The Scranton Knights faced off against the Valley View Cougars in a thrilling match-up that kept fans on the edge of their seats... ',
+    content: `The Scranton Knights faced off against the Valley View Cougars in a thrilling match-up that kept fans on the edge of their seats. Both teams played with heart and determination, but it was the Knights who pulled ahead in the final quarter. Quarterback Alex Johnson threw for two touchdowns, while running back Chris Lee rushed for over 120 yards. The Cougars responded with a strong defensive effort, but ultimately fell short. The final score was 28-21 in favor of Scranton. Fans are already looking forward to the next big game!`,
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -8,11 +17,25 @@ export default function Home() {
       <section className="py-8 bg-cream-50">
         <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-            {/* Left Side - Welcome Message */}
+            {/* Left Side - Welcome Message and Article */}
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-primary-500 mb-6">Welcome</h2>
-              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-600 text-lg font-semibold">
+              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-600 text-lg font-semibold mb-8">
                 Welcome to Span SportsHub! Stay tuned for updates and news coming soon.
+              </div>
+              {/* Article Preview Section */}
+              <div className="bg-white rounded-lg shadow p-6 text-left mb-4 cursor-pointer hover:bg-cream-50 transition" onClick={() => setExpanded(!expanded)}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-primary-400">{article.date}</span>
+                  <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded font-semibold">Article</span>
+                </div>
+                <h3 className="text-xl font-bold text-primary-700 mb-2">{article.title}</h3>
+                <p className="text-primary-600 mb-2">
+                  {expanded ? article.content : article.preview}
+                </p>
+                <span className="text-secondary-500 font-semibold hover:underline">
+                  {expanded ? 'Show Less' : 'Read Full Article →'}
+                </span>
               </div>
             </div>
             {/* Vertical Line Divider */}
