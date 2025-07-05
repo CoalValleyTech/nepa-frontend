@@ -5,9 +5,12 @@ export default function Home() {
   const [expanded, setExpanded] = useState(false);
   const article = {
     title: 'Friday Night Lights: Scranton vs. Valley View',
-    date: 'April 19, 2024',
-    preview: 'The Scranton Knights faced off against the Valley View Cougars in a thrilling match-up that kept fans on the edge of their seats... ',
-    content: `The Scranton Knights faced off against the Valley View Cougars in a thrilling match-up that kept fans on the edge of their seats. Both teams played with heart and determination, but it was the Knights who pulled ahead in the final quarter. Quarterback Alex Johnson threw for two touchdowns, while running back Chris Lee rushed for over 120 yards. The Cougars responded with a strong defensive effort, but ultimately fell short. The final score was 28-21 in favor of Scranton. Fans are already looking forward to the next big game!`,
+    date: 'July 7, 2025',
+    preview: 'The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community... ',
+    content: `The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community with the most accurate stats provided by the teams. We are committed to keeping our services free to allow for everyone to access our content. 
+On the website, you will be able to find all schools located in the Lackawanna Interscholastic Athletics Association and their respective teams. You will also find links to video and radio broadcasts, so you can watch or listen to your favorite teams on the go. You can also find us on Facebook and Instagram, where we will post information, recaps, and leaderboards about all your favorite teams! 
+Our current resources only allow us to cover Girls' Tennis and Football for the Fall 2025 Season. As we look to expand into more sports in the coming season, we will look for more opportunities to grow and expand our brand. Stay tuned in the following weeks and months as we announce more exciting things that have yet to come!
+`,
   };
 
   return (
@@ -17,14 +20,17 @@ export default function Home() {
       <section className="py-8 bg-cream-50">
         <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-            {/* Left Side - Welcome Message and Article */}
+            {/* Left Side - Latest News and Article */}
             <div className="flex-1">
-              <h2 className="text-3xl font-bold text-primary-500 mb-6">Welcome</h2>
-              <div className="bg-cream-100 rounded-lg p-6 lg:p-8 shadow-lg text-center text-primary-600 text-lg font-semibold mb-8">
-                Welcome to Span SportsHub! Stay tuned for updates and news coming soon.
-              </div>
+              <h2 className="text-3xl font-bold text-primary-500 mb-6">Latest News</h2>
               {/* Article Preview Section */}
-              <div className="bg-white rounded-lg shadow p-6 text-left mb-4 cursor-pointer hover:bg-cream-50 transition" onClick={() => setExpanded(!expanded)}>
+              <button
+                className="w-full bg-white rounded-lg shadow p-6 text-left mb-4 cursor-pointer hover:bg-cream-50 transition focus:outline-none focus:ring-2 focus:ring-secondary-400"
+                onClick={() => setExpanded(!expanded)}
+                aria-expanded={expanded}
+                aria-label={expanded ? 'Collapse article' : 'Expand article'}
+                type="button"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-primary-400">{article.date}</span>
                   <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded font-semibold">Article</span>
@@ -36,7 +42,7 @@ export default function Home() {
                 <span className="text-secondary-500 font-semibold hover:underline">
                   {expanded ? 'Show Less' : 'Read Full Article →'}
                 </span>
-              </div>
+              </button>
             </div>
             {/* Vertical Line Divider */}
             <div className="hidden lg:block w-px bg-primary-300 mx-2"></div>
