@@ -36,7 +36,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                     alt="SPAN Logo" 
                     className="w-48 h-48 object-contain mx-auto mb-4"
                   />
-                  <h2 className="text-3xl font-bold text-cream-100">Welcome to SPAN SportsHub!</h2>
+                  <h2 className="text-3xl font-bold text-cream-100">Welcome to SPAN SPORTSHUB</h2>
                 </div>
                 <button
                   onClick={() => setShowPopup(false)}
