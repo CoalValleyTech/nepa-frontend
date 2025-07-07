@@ -20,7 +20,7 @@ const Header = () => {
         {/* Logo and Site Name */}
         <div className="flex items-center mb-2 sm:mb-0">
           <img src="/span-logo.png" alt="Span SportsHub Logo" className="h-24 w-auto mr-3" />
-          <span className="text-2xl font-extrabold tracking-tight text-cream-100">Span SportsHub</span>
+          <span className="text-2xl font-extrabold tracking-tight text-cream-100">SPAN SPORTSHUB</span>
         </div>
         {/* Navigation */}
         <nav className="flex space-x-6 mb-2 sm:mb-0">
