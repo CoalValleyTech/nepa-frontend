@@ -35,16 +35,18 @@ const Login = () => {
       <Header />
       <main className="flex-1 flex flex-col items-center justify-center bg-cream-50 px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-primary-700 mb-8 text-center">Login</h1>
+          <div className="flex justify-center mb-8">
+            <img src="/span-logo.png" alt="Span SportsHub Logo" className="h-24 w-auto" />
+          </div>
           <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-primary-700 mb-1">
-                Username (Email)
+                Username
               </label>
               <input
                 id="username"
                 name="username"
-                type="email"
+                type="text"
                 autoComplete="off"
                 className="w-full px-4 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
                 value={username}
