@@ -69,24 +69,32 @@ const Sports = () => {
               <ul className="space-y-10">
                 {divisions.map((division) => (
                   <li key={division.name}>
-                    <h3 className="text-xl font-bold text-primary-700 mb-4 border-b border-primary-200 pb-2">{division.name}</h3>
+                    <h3 className="text-xl font-extrabold mb-4 pb-2 border-b-4 border-orange-400 text-orange-400 uppercase tracking-wide bg-green-600 px-2 py-2 rounded">
+                      {division.name}
+                    </h3>
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-primary-200 text-sm">
+                      <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
                         <thead>
-                          <tr className="bg-cream-100">
-                            <th className="px-2 sm:px-4 py-2 text-left text-primary-700 font-semibold">Team</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-primary-700 font-semibold">Wins</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-primary-700 font-semibold">Losses</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-primary-700 font-semibold">Win %</th>
+                          <tr className="bg-green-600">
+                            <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase">Team</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Wins</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Losses</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Win %</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {division.teams.map((team) => (
-                            <tr key={team} className="even:bg-cream-50">
-                              <td className="px-2 sm:px-4 py-2 font-medium text-primary-800 whitespace-nowrap">{team}</td>
-                              <td className="px-2 sm:px-4 py-2 text-center text-primary-700">0</td>
-                              <td className="px-2 sm:px-4 py-2 text-center text-primary-700">0</td>
-                              <td className="px-2 sm:px-4 py-2 text-center text-primary-700">0.000</td>
+                          {division.teams.map((team, idx) => (
+                            <tr
+                              key={team}
+                              className={
+                                `even:bg-orange-50 odd:bg-green-50` +
+                                (idx !== division.teams.length - 1 ? ' border-b-2 border-orange-300' : '')
+                              }
+                            >
+                              <td className="px-2 sm:px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
+                              <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">0</td>
+                              <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">0</td>
+                              <td className="px-2 sm:px-4 py-3 text-center text-green-700 font-bold">0.000</td>
                             </tr>
                           ))}
                         </tbody>
