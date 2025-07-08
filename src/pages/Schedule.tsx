@@ -1,9 +1,10 @@
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const Schedule = () => (
-  <div className="min-h-screen bg-cream-50">
+  <div className="min-h-screen bg-cream-50 flex flex-col">
     <Header />
-    <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4 py-8 flex-1">
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
         {/* Date */}
         <div className="text-gray-500 text-sm mb-2 font-semibold border-b pb-2">Friday, July 19, 2024</div>
@@ -30,6 +31,7 @@ const Schedule = () => (
         </div>
       </div>
     </main>
+    <Footer />
   </div>
 );
 

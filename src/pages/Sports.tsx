@@ -1,4 +1,5 @@
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { useState } from 'react';
 
 const divisions = [
@@ -42,9 +43,9 @@ const Sports = () => {
   const [showDivisions, setShowDivisions] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex flex-col md:flex-row">
+      <div className="flex flex-col md:flex-row flex-1">
         {/* Left grid section */}
         <aside className="w-full md:w-64 bg-cream-100 p-4 md:p-6 flex flex-col items-start min-h-0 md:min-h-[calc(100vh-6rem)] shadow-md">
           <h2 className="text-2xl font-bold text-primary-600 mb-4 md:mb-6">Sports</h2>
@@ -100,6 +101,7 @@ const Sports = () => {
           )}
         </main>
       </div>
+      <Footer />
     </div>
   );
 };
