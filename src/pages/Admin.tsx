@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+
+const allowedAdmins = ['batesnate958@gmail.com', 'mnovak03@outlook.com'];
 
 interface School {
   id: number;
@@ -126,6 +130,8 @@ function splitSports(sports: string[]) {
 }
 
 const Admin = () => {
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const [schools, setSchools] = useState<SchoolLocal[]>([]);
   const [form, setForm] = useState<Partial<School>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -196,8 +202,23 @@ const Admin = () => {
   };
 
   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (!user || !allowedAdmins.includes(user.email || '')) {
+        navigate('/login');
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
     fetchSchools();
   }, []);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
+  }
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

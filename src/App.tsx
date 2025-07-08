@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Schools from './pages/Schools';
 import Sports from './pages/Sports';
 import Schedule from './pages/Schedule';
+import Login from './pages/Login';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Route path="/schools" element={<Schools />} />
       <Route path="/sports" element={<Sports />} />
       <Route path="/schedule" element={<Schedule />} />
+      <Route path="/login" element={<Login />} />
       {/* Add more routes as needed */}
     </Routes>
   );
