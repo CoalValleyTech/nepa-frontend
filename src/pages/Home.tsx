@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { School, getSchools } from '../services/firebaseService';
+import { getSchools } from '../services/firebaseService';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
@@ -25,8 +25,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     const loadSchools = async () => {
       try {
         // setSchoolsLoading(true); // This line was removed as per the edit hint
-        const schoolsData = await getSchools();
-        // setSchools(schoolsData.slice(0, 3)); // This line was removed as per the edit hint
+        await getSchools();
       } catch (error) {
         console.error('Error loading schools:', error);
       } finally {

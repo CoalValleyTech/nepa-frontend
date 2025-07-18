@@ -18,7 +18,7 @@ const AdminAddSchool: React.FC<AdminAddSchoolProps> = ({ schools, setSchools, sc
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadSchools = async (retry = false) => {
+  const loadSchools = async () => {
     try {
       setSchoolsLoading(true);
       setError('');
