@@ -76,18 +76,18 @@ const Header = () => {
                   {link.label}
                 </Link>
                 {/* Dropdown */}
+                {/* Mobile Dropdown */}
                 {schoolsDropdownOpen && (
-                  <div
-                    id="schools-dropdown"
-                    className="absolute left-0 right-0 top-full mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200 overflow-y-auto w-full px-2 py-4 sm:left-1/2 sm:w-[700px] sm:px-10 sm:py-8 sm:min-w-[700px] md:w-[1000px] md:min-w-[1000px] md:max-w-[95vw] md:transform md:-translate-x-1/2"
-                    style={{ maxHeight: '80vh' }}
-                    onMouseEnter={handleDropdownEnter}
-                    onMouseLeave={handleDropdownLeave}
-                  >
-                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
-                    <div
-                      className="grid gap-x-2 gap-y-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-6"
+                  <div className="sm:hidden fixed inset-0 z-50 bg-white flex flex-col items-center justify-start px-2 py-4 overflow-y-auto">
+                    <button
+                      className="absolute top-4 right-4 text-2xl text-primary-700 bg-primary-100 rounded-full w-10 h-10 flex items-center justify-center shadow hover:bg-primary-200"
+                      onClick={() => setSchoolsDropdownOpen(false)}
+                      aria-label="Close schools dropdown"
                     >
+                      &times;
+                    </button>
+                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
+                    <div className="grid gap-x-2 gap-y-4 grid-cols-2 w-full max-w-2xl mx-auto">
                       {schools.length === 0 ? (
                         <div className="text-primary-400 text-center col-span-full">No schools available.</div>
                       ) : (
@@ -99,7 +99,41 @@ const Header = () => {
                               key={school.id}
                               to={`/schools/${school.id}`}
                               className="flex flex-col items-center justify-center hover:bg-primary-100 rounded px-4 py-3 transition-colors min-h-[90px]"
-                              style={{ minWidth: '180px', maxWidth: '220px' }}
+                              style={{ minWidth: '140px', maxWidth: '180px' }}
+                              onClick={() => setSchoolsDropdownOpen(false)}
+                            >
+                              {school.logoUrl ? (
+                                <img src={school.logoUrl} alt={school.name + ' logo'} className="h-12 w-12 object-contain rounded mb-2" />
+                              ) : (
+                                <div className="h-12 w-12 bg-primary-100 rounded flex items-center justify-center mb-2">
+                                  <span className="text-primary-500 text-xs">No Logo</span>
+                                </div>
+                              )}
+                              <span className="font-semibold text-base text-center whitespace-normal leading-tight break-words w-full">{school.name}</span>
+                              <span className="text-primary-400 text-xs text-center whitespace-normal leading-tight break-words w-full">{school.location}</span>
+                            </Link>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* Desktop Dropdown */}
+                {schoolsDropdownOpen && (
+                  <div className="hidden sm:block absolute left-1/2 top-full mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200 overflow-y-auto w-[1000px] min-w-[1000px] max-w-[95vw] px-10 py-8 transform -translate-x-1/2">
+                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
+                    <div className="grid gap-x-2 gap-y-4 grid-cols-6 w-full max-w-4xl mx-auto">
+                      {schools.length === 0 ? (
+                        <div className="text-primary-400 text-center col-span-full">No schools available.</div>
+                      ) : (
+                        schools
+                          .slice()
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map(school => (
+                            <Link
+                              key={school.id}
+                              to={`/schools/${school.id}`}
+                              className="flex flex-col items-center justify-center hover:bg-primary-100 rounded px-4 py-3 transition-colors min-h-[90px]"
+                              style={{ minWidth: '140px', maxWidth: '180px' }}
                               onClick={() => setSchoolsDropdownOpen(false)}
                             >
                               {school.logoUrl ? (
