@@ -79,19 +79,15 @@ const Header = () => {
                 {schoolsDropdownOpen && (
                   <div
                     id="schools-dropdown"
-                    className="absolute mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200
-                      w-full left-0 right-0 px-2 py-6 sm:left-1/2 sm:w-[700px] sm:px-10 sm:py-8 sm:min-w-[700px] sm:max-w-[1000px] sm:transform sm:-translate-x-1/2"
-                    style={{ maxHeight: '90vh', overflowY: 'visible' }}
+                    className="absolute mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200 overflow-hidden
+                      w-full left-0 right-0 min-h-[200px] px-2 py-6 sm:left-1/2 sm:w-[700px] sm:px-10 sm:py-8 sm:min-w-[700px] sm:max-w-[1000px] sm:transform sm:-translate-x-1/2"
+                    style={{ maxHeight: '70vh', overflowY: 'auto' }}
                     onMouseEnter={handleDropdownEnter}
                     onMouseLeave={handleDropdownLeave}
                   >
                     <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
                     <div
-                      className="grid gap-x-10 gap-y-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-6"
-                      style={{
-                        maxHeight: 'none',
-                        overflowY: 'visible',
-                      }}
+                      className="grid gap-x-6 gap-y-6 grid-cols-2 sm:grid-cols-4 md:grid-cols-6"
                     >
                       {schools.length === 0 ? (
                         <div className="text-primary-400 text-center col-span-full">No schools available.</div>
