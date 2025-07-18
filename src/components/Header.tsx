@@ -79,8 +79,9 @@ const Header = () => {
                 {schoolsDropdownOpen && (
                   <div
                     id="schools-dropdown"
-                    className="absolute left-1/2 mt-2 min-w-[1000px] bg-white text-primary-700 rounded-lg shadow-xl z-50 px-10 py-8 border border-primary-200"
-                    style={{ maxHeight: '90vh', overflowY: 'visible', transform: 'translateX(-50%)' }}
+                    className="absolute mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200
+                      w-full left-0 right-0 px-2 py-6 sm:left-1/2 sm:w-[700px] sm:px-10 sm:py-8 sm:min-w-[700px] sm:max-w-[1000px] sm:transform sm:-translate-x-1/2"
+                    style={{ maxHeight: '90vh', overflowY: 'visible' }}
                     onMouseEnter={handleDropdownEnter}
                     onMouseLeave={handleDropdownLeave}
                   >
