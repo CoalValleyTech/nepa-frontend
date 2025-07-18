@@ -71,7 +71,6 @@ const Header = () => {
                 <Link
                   to={link.path}
                   className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
-                  onClick={handleDropdownToggle}
                 >
                   {link.label}
                 </Link>
