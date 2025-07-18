@@ -1,8 +1,13 @@
-import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { getSchools, School } from '../services/firebaseService'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [schools, setSchools] = useState<School[]>([])
+  const [schoolsDropdownOpen, setSchoolsDropdownOpen] = useState(false)
+  const dropdownTimeout = useRef<NodeJS.Timeout | null>(null)
+  const location = useLocation();
 
   // Updated navigation items for the NEPA football broadcasting app
   const navItems = [
@@ -14,6 +19,20 @@ const Header = () => {
 
   const isActive = (path: string) => location.pathname === path
 
+  useEffect(() => {
+    // Fetch schools for dropdown
+    getSchools().then(setSchools).catch(() => setSchools([]))
+  }, [])
+
+  // Dropdown open/close handlers with delay to prevent flicker
+  const handleDropdownEnter = () => {
+    if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current)
+    setSchoolsDropdownOpen(true)
+  }
+  const handleDropdownLeave = () => {
+    dropdownTimeout.current = setTimeout(() => setSchoolsDropdownOpen(false), 200)
+  }
+
   return (
     <header className="bg-primary-500 text-white shadow-md">
       <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between py-3 px-4">
@@ -23,22 +42,83 @@ const Header = () => {
           <span className="text-2xl font-extrabold tracking-tight text-cream-100">SPAN SPORTSHUB</span>
         </div>
         {/* Navigation */}
-        <nav className="flex space-x-6 mb-2 sm:mb-0">
-          {navItems.map(link => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="flex space-x-6 mb-2 sm:mb-0 relative">
+          {navItems.map(link =>
+            link.label === 'Schools' ? (
+              <div
+                key={link.path}
+                className="relative group"
+                onMouseEnter={handleDropdownEnter}
+                onMouseLeave={handleDropdownLeave}
+              >
+                <Link
+                  to={link.path}
+                  className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
+                >
+                  {link.label}
+                </Link>
+                {/* Dropdown */}
+                {schoolsDropdownOpen && (
+                  <div
+                    className="absolute left-1/2 mt-2 min-w-[1000px] bg-white text-primary-700 rounded-lg shadow-xl z-50 px-10 py-8 border border-primary-200"
+                    style={{ maxHeight: '90vh', overflowY: 'visible', transform: 'translateX(-50%)' }}
+                    onMouseEnter={handleDropdownEnter}
+                    onMouseLeave={handleDropdownLeave}
+                  >
+                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
+                    <div
+                      className="grid gap-x-10 gap-y-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-6 lg:grid-cols-6"
+                      style={{
+                        maxHeight: 'none',
+                        overflowY: 'visible',
+                      }}
+                    >
+                      {schools.length === 0 ? (
+                        <div className="text-primary-400 text-center col-span-full">No schools available.</div>
+                      ) : (
+                        schools
+                          .slice()
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map(school => (
+                            <Link
+                              key={school.id}
+                              to={`/schools/${school.id}`}
+                              className="flex flex-col items-center justify-center hover:bg-primary-100 rounded px-4 py-3 transition-colors min-h-[90px]"
+                              style={{ minWidth: '180px', maxWidth: '220px' }}
+                              onClick={() => setSchoolsDropdownOpen(false)}
+                            >
+                              {school.logoUrl ? (
+                                <img src={school.logoUrl} alt={school.name + ' logo'} className="h-12 w-12 object-contain rounded mb-2" />
+                              ) : (
+                                <div className="h-12 w-12 bg-primary-100 rounded flex items-center justify-center mb-2">
+                                  <span className="text-primary-500 text-xs">No Logo</span>
+                                </div>
+                              )}
+                              <span className="font-semibold text-base text-center whitespace-normal leading-tight break-words w-full">{school.name}</span>
+                              <span className="text-primary-400 text-xs text-center whitespace-normal leading-tight break-words w-full">{school.location}</span>
+                            </Link>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
         {/* Social Icons */}
         <div className="flex space-x-4">
           {/* Facebook - outlined modern icon */}
           <a
-            href="https://facebook.com"
+            href="https://www.facebook.com/share/15YYYyAKXS/?mibextid=wwXIfr"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Facebook"
@@ -51,7 +131,7 @@ const Header = () => {
           </a>
           {/* Instagram - outlined modern icon */}
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/span_sportshub?igsh=ZmlyY203Y2V3czMw&utm_source=qr"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Instagram"
@@ -65,7 +145,7 @@ const Header = () => {
           </a>
           {/* X - outlined modern icon */}
           <a
-            href="https://x.com"
+            href="https://x.com/spansportshub?s=21"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="X"

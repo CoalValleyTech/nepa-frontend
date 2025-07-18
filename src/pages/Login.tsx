@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -32,7 +30,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 flex flex-col items-center justify-center bg-cream-50 px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
           <div className="flex justify-center mb-8">
@@ -79,7 +76,6 @@ const Login = () => {
           </form>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

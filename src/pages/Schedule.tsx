@@ -1,13 +1,11 @@
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const Schedule = () => (
   <div className="min-h-screen bg-cream-50 flex flex-col">
-    <Header />
-    <main className="container mx-auto px-4 py-8 flex-1">
-      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
+    <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
+      <div className="max-w-xl w-full bg-white rounded-xl shadow-lg p-6">
         {/* Date */}
-        <div className="text-gray-500 text-sm mb-2 font-semibold border-b pb-2">Friday, July 19, 2024</div>
+        <div className="text-gray-500 text-sm mb-2 font-semibold border-b pb-2">Wednesday, July 23, 2025</div>
         {/* Time & Location */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
           <div className="text-primary-700 font-medium">7:00 PM</div>

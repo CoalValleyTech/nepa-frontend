@@ -1,10 +1,11 @@
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useState, useEffect } from 'react';
+import { School, getSchools } from '../services/firebaseService';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [schoolsLoading, setSchoolsLoading] = useState(true);
   
   const article = {
     title: 'Welcome to SPAN SportsHub',
@@ -21,9 +22,25 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     setShowPopup(true);
   }, []);
 
+  // Load schools
+  useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        setSchoolsLoading(true);
+        const schoolsData = await getSchools();
+        setSchools(schoolsData.slice(0, 3)); // Show only first 3 schools
+      } catch (error) {
+        console.error('Error loading schools:', error);
+      } finally {
+        setSchoolsLoading(false);
+      }
+    };
+
+    loadSchools();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 flex flex-col">
         {/* Popup Modal */}
         {showPopup && (
@@ -141,7 +158,6 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 } 

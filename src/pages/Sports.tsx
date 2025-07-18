@@ -1,5 +1,3 @@
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useState } from 'react';
 
 const divisions = [
@@ -44,7 +42,6 @@ const Sports = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <div className="flex flex-col md:flex-row flex-1">
         {/* Left grid section */}
         <aside className="w-full md:w-64 bg-cream-100 p-4 md:p-6 flex flex-col items-start min-h-0 md:min-h-[calc(100vh-6rem)] shadow-md">
@@ -69,17 +66,17 @@ const Sports = () => {
               <ul className="space-y-10">
                 {divisions.map((division) => (
                   <li key={division.name}>
-                    <h3 className="text-xl font-extrabold mb-4 pb-2 border-b-4 border-orange-400 text-orange-400 uppercase tracking-wide bg-green-600 px-2 py-2 rounded">
+                    <h3 className="text-xl font-extrabold mb-4 pb-2 border-b-4 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-2 py-2 rounded">
                       {division.name}
                     </h3>
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
                         <thead>
                           <tr className="bg-green-600">
-                            <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase">Team</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Wins</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Losses</th>
-                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase">Win %</th>
+                            <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase bg-primary-500">Team</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Wins</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Losses</th>
+                            <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Win %</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -109,7 +106,6 @@ const Sports = () => {
           )}
         </main>
       </div>
-      <Footer />
     </div>
   );
 };
