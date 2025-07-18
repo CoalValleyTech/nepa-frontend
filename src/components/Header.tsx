@@ -32,6 +32,23 @@ const Header = () => {
   const handleDropdownLeave = () => {
     dropdownTimeout.current = setTimeout(() => setSchoolsDropdownOpen(false), 200)
   }
+  // Toggle dropdown for mobile/tap
+  const handleDropdownToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setSchoolsDropdownOpen((open) => !open);
+  }
+  // Close dropdown when clicking outside (mobile)
+  useEffect(() => {
+    if (!schoolsDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const dropdown = document.getElementById('schools-dropdown');
+      if (dropdown && !dropdown.contains(e.target as Node)) {
+        setSchoolsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [schoolsDropdownOpen]);
 
   return (
     <header className="bg-primary-500 text-white shadow-md">
@@ -54,12 +71,14 @@ const Header = () => {
                 <Link
                   to={link.path}
                   className="text-lg font-bold hover:underline text-cream-100 hover:text-secondary-300 transition-colors"
+                  onClick={handleDropdownToggle}
                 >
                   {link.label}
                 </Link>
                 {/* Dropdown */}
                 {schoolsDropdownOpen && (
                   <div
+                    id="schools-dropdown"
                     className="absolute left-1/2 mt-2 min-w-[1000px] bg-white text-primary-700 rounded-lg shadow-xl z-50 px-10 py-8 border border-primary-200"
                     style={{ maxHeight: '90vh', overflowY: 'visible', transform: 'translateX(-50%)' }}
                     onMouseEnter={handleDropdownEnter}
