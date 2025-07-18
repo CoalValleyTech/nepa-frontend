@@ -32,11 +32,6 @@ const Header = () => {
   const handleDropdownLeave = () => {
     dropdownTimeout.current = setTimeout(() => setSchoolsDropdownOpen(false), 200)
   }
-  // Toggle dropdown for mobile/tap
-  const handleDropdownToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setSchoolsDropdownOpen((open) => !open);
-  }
   // Close dropdown when clicking outside (mobile)
   useEffect(() => {
     if (!schoolsDropdownOpen) return;
