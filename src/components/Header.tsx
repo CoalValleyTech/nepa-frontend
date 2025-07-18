@@ -87,9 +87,9 @@ const Header = () => {
                       &times;
                     </button>
                     <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
-                    <div className="grid gap-x-2 gap-y-4 grid-cols-2 w-full max-w-2xl mx-auto">
+                    <div className="flex flex-col w-full max-w-md mx-auto space-y-4 mt-6">
                       {schools.length === 0 ? (
-                        <div className="text-primary-400 text-center col-span-full">No schools available.</div>
+                        <div className="text-primary-400 text-center">No schools available.</div>
                       ) : (
                         schools
                           .slice()
@@ -98,19 +98,20 @@ const Header = () => {
                             <Link
                               key={school.id}
                               to={`/schools/${school.id}`}
-                              className="flex flex-col items-center justify-center hover:bg-primary-100 rounded px-4 py-3 transition-colors min-h-[90px]"
-                              style={{ minWidth: '140px', maxWidth: '180px' }}
+                              className="flex items-center bg-primary-50 border border-primary-200 rounded-lg shadow hover:bg-primary-100 px-4 py-4 transition-colors w-full"
                               onClick={() => setSchoolsDropdownOpen(false)}
                             >
                               {school.logoUrl ? (
-                                <img src={school.logoUrl} alt={school.name + ' logo'} className="h-12 w-12 object-contain rounded mb-2" />
+                                <img src={school.logoUrl} alt={school.name + ' logo'} className="h-14 w-14 object-contain rounded mr-4 flex-shrink-0" />
                               ) : (
-                                <div className="h-12 w-12 bg-primary-100 rounded flex items-center justify-center mb-2">
+                                <div className="h-14 w-14 bg-primary-100 rounded flex items-center justify-center mr-4 flex-shrink-0">
                                   <span className="text-primary-500 text-xs">No Logo</span>
                                 </div>
                               )}
-                              <span className="font-semibold text-base text-center whitespace-normal leading-tight break-words w-full">{school.name}</span>
-                              <span className="text-primary-400 text-xs text-center whitespace-normal leading-tight break-words w-full">{school.location}</span>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span className="font-semibold text-lg text-primary-800 truncate">{school.name}</span>
+                                <span className="text-primary-500 text-sm truncate">{school.location}</span>
+                              </div>
                             </Link>
                           ))
                       )}
