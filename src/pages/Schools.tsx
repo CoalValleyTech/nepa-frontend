@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { School, getSchools } from '../services/firebaseService';
 
 const Schools = () => {

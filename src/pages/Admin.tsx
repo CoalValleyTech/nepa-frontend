@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { School, getSchools } from '../services/firebaseService';
@@ -11,7 +11,6 @@ const allowedAdmins = ['batesnate958@gmail.com', 'mnovak03@outlook.com'];
 const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const [schools, setSchools] = useState<School[]>([]);
   const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule'>('addSchool');
@@ -23,7 +22,6 @@ const Admin = () => {
       } else if (!allowedAdmins.includes(user.email || '')) {
         navigate('/login');
       } else {
-        setUser(user);
         setLoading(false);
         loadSchools();
       }

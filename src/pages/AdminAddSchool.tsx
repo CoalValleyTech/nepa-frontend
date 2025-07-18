@@ -17,7 +17,6 @@ const AdminAddSchool: React.FC<AdminAddSchoolProps> = ({ schools, setSchools, sc
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
 
   const loadSchools = async (retry = false) => {
     try {
@@ -25,15 +24,8 @@ const AdminAddSchool: React.FC<AdminAddSchoolProps> = ({ schools, setSchools, sc
       setError('');
       const schoolsData = await getSchools();
       setSchools(schoolsData);
-      setRetryCount(0);
     } catch (error: any) {
       setError(error.message || 'Failed to load schools. Please try again.');
-      if (retryCount < 3 && (error.message?.includes('network') || error.message?.includes('unavailable'))) {
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          loadSchools(true);
-        }, 2000 * (retryCount + 1));
-      }
     } finally {
       setSchoolsLoading(false);
     }
@@ -91,7 +83,6 @@ const AdminAddSchool: React.FC<AdminAddSchoolProps> = ({ schools, setSchools, sc
   };
 
   const handleRetryLoad = () => {
-    setRetryCount(0);
     loadSchools();
   };
 
