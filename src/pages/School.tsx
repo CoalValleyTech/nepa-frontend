@@ -14,12 +14,19 @@ interface School extends BaseSchool {
   };
 }
 
+// Default sport icons
+const sportIcons: Record<string, string> = {
+  football: '/default-football-helmet.png',
+  tennis: '/default-tennis-racket.png',
+};
+
 const SchoolPage = () => {
   const { id } = useParams<{ id: string }>();
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSport, setSelectedSport] = useState('');
+  const [allSchools, setAllSchools] = useState<School[]>([]);
 
   useEffect(() => {
     const fetchSchool = async () => {
@@ -27,6 +34,7 @@ const SchoolPage = () => {
       setError('');
       try {
         const schools = await getSchools();
+        setAllSchools(schools);
         const found = schools.find(s => s.id === id);
         if (found) {
           setSchool(found);
@@ -120,17 +128,31 @@ const SchoolPage = () => {
                       {school.schedules[selectedSport]
                         .slice()
                         .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-                        .map((game, idx) => (
-                          <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-primary-50 p-3 rounded-lg w-full">
-                            <div className="flex-1">
-                              {/* Format: School vs Opponent, then time, date, location */}
-                              <span className="font-bold">{school.name}</span> vs <span className="font-bold">{game.opponent}</span>
-                              <span className="ml-2">| {game.time ? new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                              <span className="ml-2">| {game.time ? new Date(game.time).toLocaleDateString() : ''}</span>
-                              <span className="ml-2">| {game.location}</span>
-                            </div>
-                          </li>
-                        ))}
+                        .map((game, idx) => {
+                          // Find opponent school (if exists)
+                          const opponentSchool = allSchools.find((s: any) => s.name === game.opponent);
+                          const opponentLogo = opponentSchool?.logoUrl || sportIcons[selectedSport] || '/default-football-helmet.png';
+                          return (
+                            <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-green-50 p-4 rounded-lg w-full shadow-sm border border-green-100">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {/* School Logo */}
+                                {school.logoUrl ? (
+                                  <img src={school.logoUrl} alt={school.name + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-green-200 flex-shrink-0" />
+                                ) : (
+                                  <img src={sportIcons[selectedSport] || '/default-football-helmet.png'} alt="Default logo" className="h-10 w-10 object-contain rounded bg-white border border-green-200 flex-shrink-0" />
+                                )}
+                                <span className="font-bold text-green-800 text-lg">{school.name}</span>
+                                <span className="text-green-700 font-semibold mx-2">vs</span>
+                                {/* Opponent Logo */}
+                                <img src={opponentLogo} alt={game.opponent + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-green-200 flex-shrink-0" />
+                                <span className="font-bold text-green-700 text-lg">{game.opponent}</span>
+                                <span className="ml-4 text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                <span className="ml-2 text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleDateString() : ''}</span>
+                                <span className="ml-2 text-green-500 font-normal">| {game.location}</span>
+                              </div>
+                            </li>
+                          );
+                        })}
                     </ul>
                   </div>
                 ) : selectedSport ? (

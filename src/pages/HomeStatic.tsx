@@ -29,39 +29,47 @@ const HomeStatic = () => {
     { homeTeam: "Lackawanna Trail", awayTeam: "Susquehanna", date: "Sep 28", time: "7:00 PM", venue: "Lackawanna Stadium" },
   ];
 
-  // Sample articles data
-  const articles = [
-    {
-      title: "Scranton High Dominates in Season Opener",
-      excerpt: "The Knights showed exceptional teamwork and strategy in their 42-14 victory over West Scranton. Quarterback Mike Johnson threw for 3 touchdowns while the defense held the opposition to just 2 scores.",
-      date: "September 15, 2024",
-      category: "Game Recap"
-    },
-    {
-      title: "Player Spotlight: Quarterback Mike Johnson",
-      excerpt: "Senior quarterback Mike Johnson has been leading the charge for Hazleton Area with impressive stats. Through 3 games, Johnson has thrown for 8 touchdowns and rushed for 3 more.",
-      date: "September 14, 2024",
-      category: "Player Profile"
-    },
-    {
-      title: "Week 3 Preview: Key Matchups to Watch",
-      excerpt: "This weekend features several crucial games that could determine playoff positioning. The Scranton vs. Wilkes-Barre matchup is the game of the week with both teams undefeated.",
-      date: "September 13, 2024",
-      category: "Preview"
-    },
-    {
-      title: "Coaching Changes Impact Local Teams",
-      excerpt: "Several NEPA schools have new head coaches this season, bringing fresh strategies and energy to their programs. The impact is already being felt on the field.",
-      date: "September 12, 2024",
-      category: "News"
-    }
-  ];
-
-  // State for rotating articles
+  const [articles, setArticles] = useState<any[]>([]);
   const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
+
+  // Load articles from localStorage or use default
+  useEffect(() => {
+    const stored = localStorage.getItem('articles');
+    if (stored) {
+      setArticles(JSON.parse(stored));
+    } else {
+      setArticles([
+        {
+          title: "Scranton High Dominates in Season Opener",
+          excerpt: "The Knights showed exceptional teamwork and strategy in their 42-14 victory over West Scranton. Quarterback Mike Johnson threw for 3 touchdowns while the defense held the opposition to just 2 scores.",
+          date: "September 15, 2024",
+          category: "Game Recap"
+        },
+        {
+          title: "Player Spotlight: Quarterback Mike Johnson",
+          excerpt: "Senior quarterback Mike Johnson has been leading the charge for Hazleton Area with impressive stats. Through 3 games, Johnson has thrown for 8 touchdowns and rushed for 3 more.",
+          date: "September 14, 2024",
+          category: "Player Profile"
+        },
+        {
+          title: "Week 3 Preview: Key Matchups to Watch",
+          excerpt: "This weekend features several crucial games that could determine playoff positioning. The Scranton vs. Wilkes-Barre matchup is the game of the week with both teams undefeated.",
+          date: "September 13, 2024",
+          category: "Preview"
+        },
+        {
+          title: "Coaching Changes Impact Local Teams",
+          excerpt: "Several NEPA schools have new head coaches this season, bringing fresh strategies and energy to their programs. The impact is already being felt on the field.",
+          date: "September 12, 2024",
+          category: "News"
+        }
+      ]);
+    }
+  }, []);
 
   // Rotate articles every 5 seconds
   useEffect(() => {
+    if (articles.length === 0) return;
     const interval = setInterval(() => {
       setCurrentArticleIndex((prevIndex) =>
         prevIndex === articles.length - 1 ? 0 : prevIndex + 1

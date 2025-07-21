@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { School, getSchools } from '../services/firebaseService';
+import { School, getSchools, updateSchoolScheduleEntry, deleteScheduleEntry } from '../services/firebaseService';
 import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
@@ -14,7 +14,26 @@ const Admin = () => {
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const navigate = useNavigate();
   const [schools, setSchools] = useState<School[]>([]);
-  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame'>('addSchool');
+  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle'>('addSchool');
+  const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
+  const [expandedSport, setExpandedSport] = useState<{ [schoolId: string]: string | null }>({});
+  const [editingGame, setEditingGame] = useState<{ schoolId: string; sport: string; idx: number } | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [articles, setArticles] = useState<any[]>([]);
+  const [articleForm, setArticleForm] = useState({ title: '', excerpt: '', date: '', category: '' });
+  const handleArticleChange = (field: string, value: string) => setArticleForm(prev => ({ ...prev, [field]: value }));
+  const handleAddArticle = () => {
+    if (!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category) return;
+    const newArticles = [...articles, { ...articleForm }];
+    setArticles(newArticles);
+    localStorage.setItem('articles', JSON.stringify(newArticles));
+    setArticleForm({ title: '', excerpt: '', date: '', category: '' });
+  };
+  const handleDeleteArticle = (idx: number) => {
+    const newArticles = articles.filter((_, i) => i !== idx);
+    setArticles(newArticles);
+    localStorage.setItem('articles', JSON.stringify(newArticles));
+  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
@@ -40,6 +59,24 @@ const Admin = () => {
     } finally {
       setSchoolsLoading(false);
     }
+  };
+
+  const handleEditClick = (schoolId: string, sport: string, idx: number, game: any) => {
+    setEditingGame({ schoolId, sport, idx });
+    setEditForm({ ...game });
+  };
+  const handleEditChange = (field: string, value: string) => {
+    setEditForm((prev: any) => ({ ...prev, [field]: value }));
+  };
+  const handleEditSave = async (schoolId: string, sport: string, oldGame: any) => {
+    // For now, just update the entry in Firestore and close the form
+    await updateSchoolScheduleEntry(schoolId, sport, oldGame, editForm);
+    setEditingGame(null);
+  };
+  const handleDeleteGame = async (schoolId: string, sport: string, game: any) => {
+    if (!window.confirm('Are you sure you want to delete this game?')) return;
+    await deleteScheduleEntry(schoolId, sport, game);
+    if (typeof loadSchools === 'function') loadSchools();
   };
 
   if (loading) {
@@ -82,6 +119,18 @@ const Admin = () => {
           >
             Add Game
           </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'editSchedule' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('editSchedule')}
+          >
+            Edit Schedule
+          </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'addArticle' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('addArticle')}
+          >
+            Add Article
+          </button>
         </nav>
       </aside>
       {/* Main Content */}
@@ -104,6 +153,118 @@ const Admin = () => {
           )}
           {activeTab === 'addGame' && (
             <AdminAddGame schools={schools} />
+          )}
+          {activeTab === 'editSchedule' && (
+            <div className="w-full flex flex-col items-center">
+              <h2 className="text-2xl font-bold text-primary-700 mb-4">Edit Schedule</h2>
+              <div className="text-primary-500 mb-6">(Select a school to edit its sports schedules)</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                {schools.map(school => {
+                  const schoolId = school.id || '';
+                  const selectedSport = expandedSport[schoolId] || '';
+                  return (
+                    <div
+                      key={schoolId}
+                      className={`bg-white rounded-xl shadow-lg p-6 cursor-pointer border-2 transition-all ${expandedSchoolId === schoolId ? 'border-primary-500' : 'border-transparent'}`}
+                      onClick={() => setExpandedSchoolId(expandedSchoolId === schoolId ? null : schoolId)}
+                    >
+                      <div className="flex items-center gap-4">
+                        {school.logoUrl && <img src={school.logoUrl} alt={school.name + ' logo'} className="h-12 w-12 object-contain rounded bg-white border border-primary-200" />}
+                        <div className="text-xl font-bold text-primary-700">{school.name}</div>
+                      </div>
+                      {expandedSchoolId === schoolId && (
+                        <div className="mt-4">
+                          <div className="font-semibold text-primary-600 mb-2">Sports:</div>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {(school.sports || []).map(sport => (
+                              <button
+                                key={sport}
+                                className={`px-3 py-1 rounded-lg border font-semibold ${selectedSport === sport ? 'bg-primary-500 text-white' : 'bg-primary-100 text-primary-700'}`}
+                                onClick={e => { e.stopPropagation(); setExpandedSport(prev => ({ ...prev, [schoolId]: selectedSport === sport ? '' : sport })); }}
+                              >
+                                {sport.charAt(0).toUpperCase() + sport.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                          {selectedSport && (
+                            <div className="bg-primary-50 rounded-lg p-4">
+                              <div className="font-semibold text-primary-700 mb-2">Games for {selectedSport}</div>
+                              <ul className="space-y-2">
+                                {Array.isArray((school as any).schedules?.[selectedSport]) && (school as any).schedules[selectedSport].length > 0 ? (
+                                  (school as any).schedules[selectedSport].map((game: any, idx: number) => {
+                                    const isEditing = editingGame && editingGame.schoolId === schoolId && editingGame.sport === selectedSport && editingGame.idx === idx;
+                                    return (
+                                      <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-white rounded shadow p-2">
+                                        {isEditing ? (
+                                          <div className="flex flex-col gap-2 w-full">
+                                            <input type="datetime-local" value={editForm.time || ''} onChange={e => handleEditChange('time', e.target.value)} className="border rounded px-2 py-1" />
+                                            <input type="text" value={editForm.location || ''} onChange={e => handleEditChange('location', e.target.value)} placeholder="Location" className="border rounded px-2 py-1" />
+                                            <input type="text" value={editForm.opponent || ''} onChange={e => handleEditChange('opponent', e.target.value)} placeholder="Opponent" className="border rounded px-2 py-1" />
+                                            <input type="text" value={editForm.status || ''} onChange={e => handleEditChange('status', e.target.value)} placeholder="Status" className="border rounded px-2 py-1" />
+                                            <div className="flex gap-2 mt-2">
+                                              <button className="bg-green-600 text-white px-3 py-1 rounded" onClick={() => handleEditSave(schoolId, selectedSport, game)}>Save</button>
+                                              <button className="bg-gray-300 text-gray-700 px-3 py-1 rounded" onClick={() => setEditingGame(null)}>Cancel</button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <span className="font-bold text-primary-700">{game.time ? new Date(game.time).toLocaleString() : ''}</span>
+                                            <span className="text-primary-600">{game.location}</span>
+                                            <span className="text-primary-500">vs {game.opponent}</span>
+                                            {game.status && <span className="text-xs px-2 py-1 rounded bg-primary-100 text-primary-700">{game.status}</span>}
+                                            {game.score && (game.score.home?.final || game.score.away?.final) && (
+                                              <span className="ml-auto font-bold text-green-700">{game.score.home?.final ?? '-'} - {game.score.away?.final ?? '-'}</span>
+                                            )}
+                                            <div className="flex gap-2 mt-2">
+                                              <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handleEditClick(schoolId, selectedSport, idx, game)}>Edit</button>
+                                              <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteGame(schoolId, selectedSport, game)}>Delete</button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </li>
+                                    );
+                                  })
+                                ) : (
+                                  <li className="text-primary-400">No games scheduled for this sport.</li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {activeTab === 'addArticle' && (
+            <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
+              <h2 className="text-2xl font-bold text-primary-700 mb-4">Add Article</h2>
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-8 w-full">
+                <div className="mb-4">
+                  <input type="text" placeholder="Title" value={articleForm.title} onChange={e => handleArticleChange('title', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
+                  <input type="text" placeholder="Category" value={articleForm.category} onChange={e => handleArticleChange('category', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
+                  <input type="date" placeholder="Date" value={articleForm.date} onChange={e => handleArticleChange('date', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
+                  <textarea placeholder="Excerpt" value={articleForm.excerpt} onChange={e => handleArticleChange('excerpt', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" rows={3} />
+                </div>
+                <button className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-semibold w-full" onClick={handleAddArticle}>Add Article</button>
+              </div>
+              <h3 className="text-xl font-semibold text-primary-700 mb-2">Existing Articles</h3>
+              <ul className="w-full space-y-4">
+                {articles.length === 0 && <li className="text-primary-400">No articles yet.</li>}
+                {articles.map((article, idx) => (
+                  <li key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2">
+                    <div className="flex-1">
+                      <div className="font-bold text-primary-700 text-lg">{article.title}</div>
+                      <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
+                      <div className="text-primary-600">{article.excerpt}</div>
+                    </div>
+                    <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArticle(idx)}>Delete</button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </main>
