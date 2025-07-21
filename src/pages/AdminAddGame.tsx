@@ -73,7 +73,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   };
 
   // Save score to Firestore
-  const handleSaveScore = async (game: any) => {
+  const handleSaveScore = async () => {
     if (!editingGameId) return;
     const gameRef = doc(db, 'schedules', editingGameId);
     await updateDoc(gameRef, {
@@ -430,7 +430,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                       ))}
                     </div>
                     <div className="flex gap-2 mt-2">
-                      <button className="bg-green-600 text-white px-4 py-1 rounded" onClick={() => handleSaveScore(game)}>Save</button>
+                      <button className="bg-green-600 text-white px-4 py-1 rounded" onClick={() => handleSaveScore()}>Save</button>
                       <button className="bg-blue-600 text-white px-4 py-1 rounded" onClick={() => handleSubmitGame(game)}>Submit Game</button>
                       <button className="bg-gray-200 text-gray-700 px-4 py-1 rounded" onClick={() => setEditingGameId(null)}>Cancel</button>
                     </div>
