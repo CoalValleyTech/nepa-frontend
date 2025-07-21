@@ -64,12 +64,6 @@ const Schedule = () => {
   // Live games (status === 'LIVE')
   const liveGames = schedules.filter((game: any) => game.status && game.status.toUpperCase() === 'LIVE');
 
-  // Helper to format date
-  function formatDate(dateStr: string) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
   // Helper to format time
   function formatTime(dateStr: string) {
     if (!dateStr) return '';

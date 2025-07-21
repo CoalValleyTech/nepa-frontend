@@ -29,7 +29,6 @@ const AdminAddSchedule: React.FC<AdminAddScheduleProps> = ({ schools }) => {
   const [showAddTeam, setShowAddTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamLogo, setNewTeamLogo] = useState<File | null>(null);
-  const [newTeamSport, setNewTeamSport] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Default sport icons
@@ -146,7 +145,6 @@ const AdminAddSchedule: React.FC<AdminAddScheduleProps> = ({ schools }) => {
     setShowAddTeam(false);
     setNewTeamName('');
     setNewTeamLogo(null);
-    setNewTeamSport('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
