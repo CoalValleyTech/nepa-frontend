@@ -5,6 +5,7 @@ import { School, getSchools } from '../services/firebaseService';
 import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
+import AdminAddGame from './AdminAddGame';
 
 const allowedAdmins = ['batesnate958@gmail.com', 'mnovak03@outlook.com'];
 
@@ -13,7 +14,7 @@ const Admin = () => {
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const navigate = useNavigate();
   const [schools, setSchools] = useState<School[]>([]);
-  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule'>('addSchool');
+  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame'>('addSchool');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
@@ -75,6 +76,12 @@ const Admin = () => {
           >
             Add Schedule
           </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'addGame' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('addGame')}
+          >
+            Add Game
+          </button>
         </nav>
       </aside>
       {/* Main Content */}
@@ -93,7 +100,10 @@ const Admin = () => {
             <AdminAddSport schools={schools} />
           )}
           {activeTab === 'addSchedule' && (
-            <AdminAddSchedule schools={schools} />
+            <AdminAddSchedule schools={schools} reloadSchools={loadSchools} />
+          )}
+          {activeTab === 'addGame' && (
+            <AdminAddGame schools={schools} />
           )}
         </div>
       </main>

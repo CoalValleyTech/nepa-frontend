@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   limit,
   where,
-  arrayUnion
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -34,6 +35,8 @@ export interface ScheduleEntry {
   location: string;
   time: string;
   opponent: string;
+  status?: string;
+  score?: any;
 }
 
 // Schools Collection
@@ -339,4 +342,104 @@ export const deleteAllGlobalSchedules = async (): Promise<void> => {
   } catch (error: any) {
     throw new Error('Failed to delete all global schedules: ' + error.message);
   }
+}; 
+
+/**
+ * Delete a single schedule/game from both the school's schedules.{sport} array and the global schedules collection.
+ * @param schoolId The school document ID
+ * @param sport The sport name
+ * @param entry The schedule entry to remove (location, time, opponent)
+ * @param globalScheduleId (optional) The document ID in the global schedules collection
+ */
+export const deleteScheduleEntry = async (
+  schoolId: string,
+  sport: string,
+  entry: ScheduleEntry,
+  globalScheduleId?: string
+): Promise<void> => {
+  try {
+    // Remove from the school's schedules.{sport} array
+    const schoolRef = doc(db, SCHOOLS_COLLECTION, schoolId);
+    await updateDoc(schoolRef, {
+      [`schedules.${sport}`]: arrayRemove(entry),
+      updatedAt: serverTimestamp(),
+    });
+    // Remove from global schedules collection if docId provided
+    if (globalScheduleId) {
+      await deleteDoc(doc(db, 'schedules', globalScheduleId));
+    } else {
+      // If no docId, try to find and delete by matching fields (less efficient)
+      const q = query(
+        collection(db, 'schedules'),
+        where('schoolId', '==', schoolId),
+        where('sport', '==', sport),
+        where('location', '==', entry.location),
+        where('time', '==', entry.time),
+        where('opponent', '==', entry.opponent)
+      );
+      const snapshot = await getDocs(q);
+      for (const docSnap of snapshot.docs) {
+        await deleteDoc(doc(db, 'schedules', docSnap.id));
+      }
+    }
+  } catch (error: any) {
+    throw new Error('Failed to delete schedule entry: ' + error.message);
+  }
+}; 
+
+/**
+ * Update a specific schedule entry in a school's schedules.{sport} array.
+ * Removes the old entry and adds the updated one (with score and status).
+ */
+export const updateSchoolScheduleEntry = async (
+  schoolId: string,
+  sport: string,
+  oldEntry: ScheduleEntry,
+  updatedEntry: ScheduleEntry
+): Promise<void> => {
+  try {
+    const schoolRef = doc(db, SCHOOLS_COLLECTION, schoolId);
+    // Remove old entry
+    await updateDoc(schoolRef, {
+      [`schedules.${sport}`]: arrayRemove(oldEntry),
+    });
+    // Add updated entry
+    await updateDoc(schoolRef, {
+      [`schedules.${sport}`]: arrayUnion(updatedEntry),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error: any) {
+    throw new Error('Failed to update school schedule entry: ' + error.message);
+  }
+}; 
+
+/**
+ * Update the score and status for a game in both schools' schedules.
+ * Updates the entry in both the home and opponent school's schedules for the sport.
+ */
+export const updateScoreForBothSchools = async (
+  homeSchoolId: string,
+  awaySchoolId: string,
+  sport: string,
+  location: string,
+  time: string,
+  homeName: string,
+  awayName: string,
+  score: any,
+  status: string
+): Promise<void> => {
+  // Update home school's entry
+  await updateSchoolScheduleEntry(
+    homeSchoolId,
+    sport,
+    { location, time, opponent: awayName },
+    { location, time, opponent: awayName, score, status }
+  );
+  // Update away school's entry
+  await updateSchoolScheduleEntry(
+    awaySchoolId,
+    sport,
+    { location, time, opponent: homeName },
+    { location, time, opponent: homeName, score, status }
+  );
 }; 

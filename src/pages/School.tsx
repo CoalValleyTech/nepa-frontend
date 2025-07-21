@@ -40,6 +40,8 @@ const SchoolPage = () => {
       }
     };
     fetchSchool();
+    // Optionally, add a reload button for manual refresh:
+    // <button onClick={fetchSchool}>Reload</button>
   }, [id]);
 
   return (
@@ -110,7 +112,32 @@ const SchoolPage = () => {
               </div>
               {/* Main Content Area */}
               <div className="flex-1">
-                {/* All sport content sections removed for now */}
+                {/* Schedule for selected sport */}
+                {selectedSport && school.schedules && school.schedules[selectedSport] && school.schedules[selectedSport].length > 0 ? (
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <h2 className="text-2xl font-semibold text-primary-600 mb-4">{selectedSport.charAt(0).toUpperCase() + selectedSport.slice(1)} Schedule</h2>
+                    <ul className="space-y-3">
+                      {school.schedules[selectedSport]
+                        .slice()
+                        .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                        .map((game, idx) => (
+                          <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-primary-50 p-3 rounded-lg w-full">
+                            <div className="flex-1">
+                              {/* Format: School vs Opponent, then time, date, location */}
+                              <span className="font-bold">{school.name}</span> vs <span className="font-bold">{game.opponent}</span>
+                              <span className="ml-2">| {game.time ? new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                              <span className="ml-2">| {game.time ? new Date(game.time).toLocaleDateString() : ''}</span>
+                              <span className="ml-2">| {game.location}</span>
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : selectedSport ? (
+                  <div className="bg-white rounded-xl shadow-lg p-6 text-primary-400">No games scheduled for this sport.</div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-lg p-6 text-primary-400">Select a sport to view the schedule.</div>
+                )}
               </div>
             </div>
           </div>
