@@ -14,7 +14,7 @@ interface ScheduleEntry {
   opponent: string;
 }
 
-const AdminAddSchedule: React.FC<AdminAddScheduleProps> = ({ schools }) => {
+const AdminAddSchedule: React.FC<AdminAddScheduleProps> = ({ schools, reloadSchools = undefined }) => {
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [selectedSport, setSelectedSport] = useState('');
   const [entries, setEntries] = useState<ScheduleEntry[]>([
