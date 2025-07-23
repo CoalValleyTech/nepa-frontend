@@ -162,7 +162,7 @@ const Header = () => {
         <div className="flex space-x-4">
           {/* Facebook - outlined modern icon */}
           <a
-            href="https://www.facebook.com/share/15YYYyAKXS/?mibextid=wwXIfr"
+            href="https://www.facebook.com/people/SPAN-Sports-Hub/61578079734705/"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Facebook"
