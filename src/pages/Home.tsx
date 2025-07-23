@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react';
-import { getSchools } from '../services/firebaseService';
+import { getSchools, getGlobalSchedules } from '../services/firebaseService';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
+  const [liveGames, setLiveGames] = useState<any[]>([]);
+  const [schools, setSchools] = useState<any[]>([]);
+  const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
   
-  const article = {
+  // Default article if no articles exist
+  const defaultArticle = {
     title: 'Welcome to SPAN SportsHub',
     date: 'July 7, 2025',
-    preview: 'The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community... ',
+    category: 'Welcome',
+    excerpt: 'The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community... ',
     content: `The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community with the most accurate stats provided by the teams. We are committed to keeping our services free to allow for everyone to access our content. 
 On the website, you will be able to find all schools located in the Lackawanna Interscholastic Athletics Association and their respective teams. You will also find links to video and radio broadcasts, so you can watch or listen to your favorite teams on the go. You can also find us on Facebook and Instagram, where we will post information, recaps, and leaderboards about all your favorite teams! 
 Our current resources only allow us to cover Girls' Tennis and Football for the Fall 2025 Season. As we look to expand into more sports in the coming season, we will look for more opportunities to grow and expand our brand. Stay tuned in the following weeks and months as we announce more exciting things that have yet to come!
@@ -20,21 +28,65 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     setShowPopup(true);
   }, []);
 
-  // Load schools
+  // Load articles from localStorage
   useEffect(() => {
-    const loadSchools = async () => {
+    const storedArticles = localStorage.getItem('articles');
+    if (storedArticles) {
+      const parsedArticles = JSON.parse(storedArticles);
+      setArticles(parsedArticles);
+      // Set the first article as selected, or default if none exist
+      if (parsedArticles.length > 0) {
+        setSelectedArticle(parsedArticles[0]);
+      } else {
+        setSelectedArticle(defaultArticle);
+      }
+    } else {
+      setSelectedArticle(defaultArticle);
+    }
+  }, []);
+
+  // Load schools and upcoming games
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        // setSchoolsLoading(true); // This line was removed as per the edit hint
-        await getSchools();
+        // Load schools
+        const schoolsData = await getSchools();
+        setSchools(schoolsData);
+        
+        // Create logo map
+        const logoMap: Record<string, string> = {};
+        for (const s of schoolsData) {
+          if (s.id && s.logoUrl) logoMap[s.id] = s.logoUrl;
+        }
+        setSchoolLogoMap(logoMap);
+        
+        // Load upcoming games
+        const allGames = await getGlobalSchedules();
+        const upcoming = allGames.filter((game: any) => 
+          game.status && game.status.toUpperCase() === 'UPCOMING'
+        );
+        setUpcomingGames(upcoming.slice(0, 3)); // Show only first 3 upcoming games
+
+        // Load live games
+        const liveGamesData = allGames.filter((game: any) => 
+          game.status && game.status.toUpperCase() === 'LIVE'
+        );
+        setLiveGames(liveGamesData);
+
       } catch (error) {
-        console.error('Error loading schools:', error);
-      } finally {
-        // setSchoolsLoading(false); // This line was removed as per the edit hint
+        console.error('Error loading data:', error);
       }
     };
 
-    loadSchools();
+    loadData();
   }, []);
+
+  // Helper to format time
+  function formatTime(dateStr: string) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -86,26 +138,78 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               {/* Left Side - Latest News and Article */}
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-primary-500 mb-6">Latest News</h2>
-                {/* Article Preview Section */}
-                <button
-                  className="w-full bg-white rounded-lg shadow p-6 text-left mb-4 cursor-pointer hover:bg-cream-50 transition focus:outline-none focus:ring-2 focus:ring-secondary-400"
-                  onClick={() => setExpanded(!expanded)}
-                  aria-expanded={expanded}
-                  aria-label={expanded ? 'Collapse article' : 'Expand article'}
-                  type="button"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-primary-400">{article.date}</span>
-                    <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded font-semibold">Article</span>
+                
+                {/* Article Navigation */}
+                {articles.length > 1 && (
+                  <div className="flex gap-2 mb-4 overflow-x-auto">
+                    {articles.map((article, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedArticle(article)}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+                          selectedArticle === article
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                        }`}
+                      >
+                        {article.title.length > 20 ? article.title.substring(0, 20) + '...' : article.title}
+                      </button>
+                    ))}
                   </div>
-                  <h3 className="text-xl font-bold text-primary-700 mb-2">{article.title}</h3>
-                  <p className="text-primary-600 mb-2">
-                    {expanded ? article.content : article.preview}
-                  </p>
-                  <span className="text-secondary-500 font-semibold hover:underline">
-                    {expanded ? 'Show Less' : 'Read Full Article →'}
-                  </span>
-                </button>
+                )}
+                
+                {/* Article Preview Section */}
+                {selectedArticle && (
+                  <button
+                    className="w-full bg-white rounded-lg shadow p-6 text-left mb-4 cursor-pointer hover:bg-cream-50 transition focus:outline-none focus:ring-2 focus:ring-secondary-400"
+                    onClick={() => setExpanded(!expanded)}
+                    aria-expanded={expanded}
+                    aria-label={expanded ? 'Collapse article' : 'Expand article'}
+                    type="button"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-primary-400">{selectedArticle.date}</span>
+                      <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded font-semibold">
+                        {selectedArticle.category || 'Article'}
+                      </span>
+                    </div>
+                    
+                    {selectedArticle.image && (
+                      <img 
+                        src={selectedArticle.image} 
+                        alt={selectedArticle.title} 
+                        className="w-full h-48 object-cover rounded mb-4"
+                      />
+                    )}
+                    
+                    <h3 className="text-xl font-bold text-primary-700 mb-2">{selectedArticle.title}</h3>
+                    
+                    {selectedArticle.author && (
+                      <p className="text-sm text-primary-500 mb-2">By {selectedArticle.author}</p>
+                    )}
+                    
+                    <div className="text-primary-600 mb-2">
+                      {expanded ? (
+                        <div className="whitespace-pre-wrap leading-relaxed">
+                          {selectedArticle.content || selectedArticle.excerpt}
+                        </div>
+                      ) : (
+                        <p>{selectedArticle.excerpt}</p>
+                      )}
+                    </div>
+                    
+                    <span className="text-secondary-500 font-semibold hover:underline">
+                      {expanded ? 'Show Less' : 'Read Full Article →'}
+                    </span>
+                  </button>
+                )}
+                
+                {/* No Articles Message */}
+                {articles.length === 0 && (
+                  <div className="w-full bg-white rounded-lg shadow p-6 text-center">
+                    <p className="text-primary-400">No articles available. Check back soon for updates!</p>
+                  </div>
+                )}
               </div>
               {/* Vertical Line Divider */}
               <div className="hidden lg:block w-px bg-primary-300 mx-2"></div>
@@ -115,7 +219,62 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
                   <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores</h2>
                   <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
-                    No scores to display.
+                    {liveGames.length === 0 ? (
+                      <p>No live games currently.</p>
+                    ) : (
+                      liveGames.map((game, index) => {
+                        // Get team names
+                        const homeTeamName = game.schoolName || 'Home Team';
+                        const awayTeamName = game.opponent || 'Away Team';
+                        
+                        return (
+                          <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
+                            {/* Header Section */}
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                              <div className="text-primary-700 font-semibold text-lg">{formatTime(game.time)}</div>
+                              <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
+                            </div>
+                            
+                            {/* Teams Section */}
+                            <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
+                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
+                                {game.schoolId && schoolLogoMap[game.schoolId] && (
+                                  <img src={schoolLogoMap[game.schoolId]} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                                )}
+                                <span className="truncate max-w-[80px]">{homeTeamName}</span>
+                              </div>
+                              <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
+                                <span className="text-xs text-primary-400">VS</span>
+                              </div>
+                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
+                                <span className="truncate max-w-[80px] text-right">{awayTeamName}</span>
+                                {(() => {
+                                  const opp = schools.find((s: any) => s.name === game.opponent);
+                                  return opp && opp.logoUrl ? (
+                                    <img src={opp.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                                  ) : null;
+                                })()}
+                              </div>
+                            </div>
+                            
+                            {/* Play Button for Livestream */}
+                            {game.url && (
+                              <div className="mt-3 flex justify-center">
+                                <button
+                                  onClick={() => window.open(game.url, '_blank')}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl"
+                                  title="Watch Live Stream"
+                                >
+                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
                 {/* Vertical Line Divider between Scores and Schedule */}
@@ -123,8 +282,66 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 {/* Schedule Section */}
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
                   <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Schedule</h2>
-                  <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
-                    No games scheduled.
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {upcomingGames.length === 0 ? (
+                      <div className="text-center text-primary-400 font-semibold">
+                        <p>No games scheduled.</p>
+                        <p className="text-sm mt-1">Check back soon!</p>
+                      </div>
+                    ) : (
+                      upcomingGames.map((game, index) => {
+                        // Get team names
+                        const homeTeamName = game.schoolName || 'Home Team';
+                        const awayTeamName = game.opponent || 'Away Team';
+                        
+                        return (
+                          <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
+                            {/* Header Section */}
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                              <div className="text-primary-700 font-semibold text-lg">{formatTime(game.time)}</div>
+                              <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
+                            </div>
+                            
+                            {/* Teams Section */}
+                            <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
+                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
+                                {game.schoolId && schoolLogoMap[game.schoolId] && (
+                                  <img src={schoolLogoMap[game.schoolId]} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                                )}
+                                <span className="truncate max-w-[80px]">{homeTeamName}</span>
+                              </div>
+                              <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
+                                <span className="text-xs text-primary-400">VS</span>
+                              </div>
+                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
+                                <span className="truncate max-w-[80px] text-right">{awayTeamName}</span>
+                                {(() => {
+                                  const opp = schools.find((s: any) => s.name === game.opponent);
+                                  return opp && opp.logoUrl ? (
+                                    <img src={opp.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                                  ) : null;
+                                })()}
+                              </div>
+                            </div>
+                            
+                            {/* Play Button for Livestream */}
+                            {game.url && (
+                              <div className="mt-3 flex justify-center">
+                                <button
+                                  onClick={() => window.open(game.url, '_blank')}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl"
+                                  title="Watch Live Stream"
+                                >
+                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

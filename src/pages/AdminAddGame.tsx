@@ -13,11 +13,23 @@ const SPORTS = [
 ];
 
 const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
-  const [homeTeam, setHomeTeam] = useState('');
-  const [awayTeam, setAwayTeam] = useState('');
-  const [sport, setSport] = useState('');
-  const [location, setLocation] = useState('');
-  const [time, setTime] = useState('');
+  // Live Game form state
+  const [liveHomeTeam, setLiveHomeTeam] = useState('');
+  const [liveAwayTeam, setLiveAwayTeam] = useState('');
+  const [liveSport, setLiveSport] = useState('');
+  const [liveLocation, setLiveLocation] = useState('');
+  const [liveTime, setLiveTime] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+  
+  // Upcoming Game form state
+  const [upcomingHomeTeam, setUpcomingHomeTeam] = useState('');
+  const [upcomingAwayTeam, setUpcomingAwayTeam] = useState('');
+  const [upcomingSport, setUpcomingSport] = useState('');
+  const [upcomingLocation, setUpcomingLocation] = useState('');
+  const [upcomingTime, setUpcomingTime] = useState('');
+  const [upcomingUrl, setUpcomingUrl] = useState('');
+  
+  // Shared state
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +42,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamLogo, setNewTeamLogo] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [url, setUrl] = useState('');
   const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
+  const [activeForm, setActiveForm] = useState<'live' | 'upcoming'>('live');
 
   // Default sport icons
   const sportIcons: Record<string, string> = {
@@ -139,37 +151,57 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
     e.preventDefault();
     setError('');
     setMessage('');
-    if (!homeTeam || !awayTeam || !sport || !location || !time) {
+    if (!liveHomeTeam || !liveAwayTeam || !liveSport || !liveLocation || !liveTime) {
       setError('Please fill out all fields.');
       return;
     }
-    if (homeTeam === awayTeam) {
+    if (liveHomeTeam === liveAwayTeam) {
       setError('Home and away teams must be different.');
       return;
     }
     setIsSubmitting(true);
     try {
-      // Find school info for home team
-      const homeSchool = schools.find(s => s.id === homeTeam);
+      // Check if home team is a school or external team
+      const homeSchool = schools.find(s => s.id === liveHomeTeam);
+      const isHomeExternal = !homeSchool && liveHomeTeam;
+      
+      // Check if away team is a school or external team
+      const awaySchool = schools.find(s => s.id === liveAwayTeam);
+      const isAwayExternal = !awaySchool && liveAwayTeam;
+      
+      console.log('Debug info:', {
+        homeTeam: liveHomeTeam,
+        awayTeam: liveAwayTeam,
+        homeSchool,
+        awaySchool,
+        isHomeExternal,
+        isAwayExternal,
+        homeSchoolId: homeSchool?.id,
+        homeSchoolName: isHomeExternal ? liveHomeTeam : homeSchool?.name,
+        awaySchoolName: isAwayExternal ? liveAwayTeam : awaySchool?.name,
+        externalTeams,
+        schools: schools.map(s => ({ id: s.id, name: s.name }))
+      });
+      
       await addScheduleToGlobal(
-        homeSchool?.id,
-        homeSchool?.name,
-        sport,
+        homeSchool?.id, // This will be undefined for external teams
+        isHomeExternal ? liveHomeTeam : homeSchool?.name || '', // Use team name for external teams
+        liveSport,
         {
-          location,
-          time,
-          opponent: schools.find(s => s.id === awayTeam)?.name || '',
+          location: liveLocation,
+          time: liveTime,
+          opponent: isAwayExternal ? liveAwayTeam : awaySchool?.name || '', // Use team name for external teams
           status: 'LIVE',
-          url,
+          url: liveUrl,
         }
       );
       setMessage('Live game added!');
-      setHomeTeam('');
-      setAwayTeam('');
-      setSport('');
-      setLocation('');
-      setTime('');
-      setUrl('');
+      setLiveHomeTeam('');
+      setLiveAwayTeam('');
+      setLiveSport('');
+      setLiveLocation('');
+      setLiveTime('');
+      setLiveUrl('');
       fetchLiveGames();
     } catch (err: any) {
       setError(err.message || 'Failed to add game.');
@@ -181,16 +213,34 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   // Add new external team
   const handleAddExternalTeam = (teamType: 'home' | 'away') => {
     if (!newTeamName) return;
+    
+    // Use the activeForm state to determine which form initiated the dialog
+    const currentSport = activeForm === 'live' ? liveSport : upcomingSport;
+    
     setExternalTeams(prev => [
       ...prev,
       {
         name: newTeamName,
-        logoUrl: newTeamLogo ? URL.createObjectURL(newTeamLogo) : sportIcons[sport] || '',
-        sport,
+        logoUrl: newTeamLogo ? URL.createObjectURL(newTeamLogo) : sportIcons[currentSport] || '',
+        sport: currentSport,
       },
     ]);
-    if (teamType === 'home') setHomeTeam(newTeamName);
-    if (teamType === 'away') setAwayTeam(newTeamName);
+    
+    // Set the team name in the appropriate form based on activeForm
+    if (activeForm === 'live') {
+      if (teamType === 'home') {
+        setLiveHomeTeam(newTeamName);
+      } else {
+        setLiveAwayTeam(newTeamName);
+      }
+    } else {
+      if (teamType === 'home') {
+        setUpcomingHomeTeam(newTeamName);
+      } else {
+        setUpcomingAwayTeam(newTeamName);
+      }
+    }
+    
     setShowAddTeam(null);
     setNewTeamName('');
     setNewTeamLogo(null);
@@ -212,12 +262,13 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Home Team</label>
             <select
-              value={homeTeam}
+              value={liveHomeTeam}
               onChange={e => {
                 if (e.target.value === '__add_new__') {
+                  setActiveForm('live');
                   setShowAddTeam('home');
                 } else {
-                  setHomeTeam(e.target.value);
+                  setLiveHomeTeam(e.target.value);
                 }
               }}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
@@ -228,7 +279,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
               {schools.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+              {externalTeams.filter(team => team.sport === liveSport).map((team, i) => (
                 <option key={team.name + i} value={team.name}>{team.name} (External)</option>
               ))}
               <option value="__add_new__">+ Add New Team</option>
@@ -270,12 +321,13 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Away Team</label>
             <select
-              value={awayTeam}
+              value={liveAwayTeam}
               onChange={e => {
                 if (e.target.value === '__add_new__') {
+                  setActiveForm('live');
                   setShowAddTeam('away');
                 } else {
-                  setAwayTeam(e.target.value);
+                  setLiveAwayTeam(e.target.value);
                 }
               }}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
@@ -286,7 +338,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
               {schools.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+              {externalTeams.filter(team => team.sport === liveSport).map((team, i) => (
                 <option key={team.name + i} value={team.name}>{team.name} (External)</option>
               ))}
               <option value="__add_new__">+ Add New Team</option>
@@ -330,8 +382,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Sport</label>
             <select
-              value={sport}
-              onChange={e => setSport(e.target.value)}
+              value={liveSport}
+              onChange={e => setLiveSport(e.target.value)}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
               required
               disabled={isSubmitting}
@@ -346,8 +398,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
             <label className="block text-sm font-medium text-primary-700 mb-1">Location</label>
             <input
               type="text"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
+              value={liveLocation}
+              onChange={e => setLiveLocation(e.target.value)}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
               required
               disabled={isSubmitting}
@@ -358,8 +410,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <label className="block text-sm font-medium text-primary-700 mb-1">Time</label>
           <input
             type="datetime-local"
-            value={time}
-            onChange={e => setTime(e.target.value)}
+            value={liveTime}
+            onChange={e => setLiveTime(e.target.value)}
             className="w-full px-3 py-2 border border-primary-200 rounded-lg"
             required
             disabled={isSubmitting}
@@ -369,8 +421,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <label className="block text-sm font-medium text-primary-700 mb-1">Game URL (optional)</label>
           <input
             type="url"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
+            value={liveUrl}
+            onChange={e => setLiveUrl(e.target.value)}
             className="w-full px-3 py-2 border border-primary-200 rounded-lg"
             placeholder="https://example.com/stream"
             disabled={isSubmitting}
@@ -391,36 +443,57 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
         e.preventDefault();
         setError('');
         setMessage('');
-        if (!homeTeam || !awayTeam || !sport || !location || !time) {
+        if (!upcomingHomeTeam || !upcomingAwayTeam || !upcomingSport || !upcomingLocation || !upcomingTime) {
           setError('Please fill out all fields.');
           return;
         }
-        if (homeTeam === awayTeam) {
+        if (upcomingHomeTeam === upcomingAwayTeam) {
           setError('Home and away teams must be different.');
           return;
         }
         setIsSubmitting(true);
         try {
-          const homeSchool = schools.find(s => s.id === homeTeam);
+          // Check if home team is a school or external team
+          const homeSchool = schools.find(s => s.id === upcomingHomeTeam);
+          const isHomeExternal = !homeSchool && upcomingHomeTeam;
+          
+          // Check if away team is a school or external team
+          const awaySchool = schools.find(s => s.id === upcomingAwayTeam);
+          const isAwayExternal = !awaySchool && upcomingAwayTeam;
+          
+          console.log('Debug info (Upcoming):', {
+            homeTeam: upcomingHomeTeam,
+            awayTeam: upcomingAwayTeam,
+            homeSchool,
+            awaySchool,
+            isHomeExternal,
+            isAwayExternal,
+            homeSchoolId: homeSchool?.id,
+            homeSchoolName: isHomeExternal ? upcomingHomeTeam : homeSchool?.name,
+            awaySchoolName: isAwayExternal ? upcomingAwayTeam : awaySchool?.name,
+            externalTeams,
+            schools: schools.map(s => ({ id: s.id, name: s.name }))
+          });
+          
           await addScheduleToGlobal(
-            homeSchool?.id,
-            homeSchool?.name,
-            sport,
+            homeSchool?.id, // This will be undefined for external teams
+            isHomeExternal ? upcomingHomeTeam : homeSchool?.name || '', // Use team name for external teams
+            upcomingSport,
             {
-              location,
-              time,
-              opponent: schools.find(s => s.id === awayTeam)?.name || '',
+              location: upcomingLocation,
+              time: upcomingTime,
+              opponent: isAwayExternal ? upcomingAwayTeam : awaySchool?.name || '', // Use team name for external teams
               status: 'UPCOMING',
-              url,
+              url: upcomingUrl,
             }
           );
           setMessage('Upcoming game added!');
-          setHomeTeam('');
-          setAwayTeam('');
-          setSport('');
-          setLocation('');
-          setTime('');
-          setUrl('');
+          setUpcomingHomeTeam('');
+          setUpcomingAwayTeam('');
+          setUpcomingSport('');
+          setUpcomingLocation('');
+          setUpcomingTime('');
+          setUpcomingUrl('');
           fetchLiveGames();
         } catch (err: any) {
           setError(err.message || 'Failed to add game.');
@@ -432,12 +505,13 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Home Team</label>
             <select
-              value={homeTeam}
+              value={upcomingHomeTeam}
               onChange={e => {
                 if (e.target.value === '__add_new__') {
+                  setActiveForm('upcoming');
                   setShowAddTeam('home');
                 } else {
-                  setHomeTeam(e.target.value);
+                  setUpcomingHomeTeam(e.target.value);
                 }
               }}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
@@ -448,7 +522,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
               {schools.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+              {externalTeams.filter(team => team.sport === upcomingSport).map((team, i) => (
                 <option key={team.name + i} value={team.name}>{team.name} (External)</option>
               ))}
               <option value="__add_new__">+ Add New Team</option>
@@ -490,12 +564,13 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Away Team</label>
             <select
-              value={awayTeam}
+              value={upcomingAwayTeam}
               onChange={e => {
                 if (e.target.value === '__add_new__') {
+                  setActiveForm('upcoming');
                   setShowAddTeam('away');
                 } else {
-                  setAwayTeam(e.target.value);
+                  setUpcomingAwayTeam(e.target.value);
                 }
               }}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
@@ -506,7 +581,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
               {schools.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+              {externalTeams.filter(team => team.sport === upcomingSport).map((team, i) => (
                 <option key={team.name + i} value={team.name}>{team.name} (External)</option>
               ))}
               <option value="__add_new__">+ Add New Team</option>
@@ -550,8 +625,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <div className="flex-1">
             <label className="block text-sm font-medium text-primary-700 mb-1">Sport</label>
             <select
-              value={sport}
-              onChange={e => setSport(e.target.value)}
+              value={upcomingSport}
+              onChange={e => setUpcomingSport(e.target.value)}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
               required
               disabled={isSubmitting}
@@ -566,8 +641,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
             <label className="block text-sm font-medium text-primary-700 mb-1">Location</label>
             <input
               type="text"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
+              value={upcomingLocation}
+              onChange={e => setUpcomingLocation(e.target.value)}
               className="w-full px-3 py-2 border border-primary-200 rounded-lg"
               required
               disabled={isSubmitting}
@@ -578,8 +653,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <label className="block text-sm font-medium text-primary-700 mb-1">Time</label>
           <input
             type="datetime-local"
-            value={time}
-            onChange={e => setTime(e.target.value)}
+            value={upcomingTime}
+            onChange={e => setUpcomingTime(e.target.value)}
             className="w-full px-3 py-2 border border-primary-200 rounded-lg"
             required
             disabled={isSubmitting}
@@ -589,8 +664,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           <label className="block text-sm font-medium text-primary-700 mb-1">Game URL (optional)</label>
           <input
             type="url"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
+            value={upcomingUrl}
+            onChange={e => setUpcomingUrl(e.target.value)}
             className="w-full px-3 py-2 border border-primary-200 rounded-lg"
             placeholder="https://example.com/stream"
             disabled={isSubmitting}
@@ -614,8 +689,14 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
       ) : (
         <div className="space-y-4">
           {liveGames.map((game, idx) => {
-            const home = schools.find(s => s.id === game.schoolId);
-            const away = schools.find(s => s.name === game.opponent);
+            // For home team: use schoolName if available, otherwise find by schoolId
+            const homeTeamName = game.schoolName || schools.find(s => s.id === game.schoolId)?.name || 'Unknown Team';
+            const homeSchool = schools.find(s => s.id === game.schoolId);
+            
+            // For away team: use opponent name directly
+            const awayTeamName = game.opponent || 'Unknown Team';
+            const awaySchool = schools.find(s => s.name === game.opponent);
+            
             const columns = getScoreboardColumns(game.sport);
             const score = game.score || {};
             return (
@@ -627,19 +708,19 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                 </div>
                 <div className="flex items-center justify-between py-2 border-t border-b">
                   <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
-                    {home && home.logoUrl && (
-                      <img src={home.logoUrl} alt={home.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    {homeSchool && homeSchool.logoUrl && (
+                      <img src={homeSchool.logoUrl} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
                     )}
-                    <span className="truncate max-w-[90px]">{home?.name}</span>
+                    <span className="truncate max-w-[120px]">{homeTeamName}</span>
                   </div>
                   <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
                     <span className="text-xs text-primary-400">VS</span>
                   </div>
                   <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
-                    {away && away.logoUrl && (
-                      <img src={away.logoUrl} alt={away.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    {awaySchool && awaySchool.logoUrl && (
+                      <img src={awaySchool.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
                     )}
-                    <span className="truncate max-w-[90px] text-right">{away?.name}</span>
+                    <span className="truncate max-w-[120px] text-right">{awayTeamName}</span>
                   </div>
                 </div>
                 {/* Scoreboard or Edit button */}
@@ -653,14 +734,14 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                       ))}
                     </div>
                     <div className="flex items-center mb-2">
-                      <div className="w-24 text-right font-semibold text-primary-700">{home?.name}</div>
+                      <div className="w-24 text-right font-semibold text-primary-700">{homeTeamName}</div>
                       <input className="w-12 text-center border rounded bg-green-50" value={scoreInputs.home?.final || ''} onChange={e => handleScoreInput('home', 'final', e.target.value)} />
                       {columns.map(col => (
                         <input key={col} className="w-12 text-center border rounded" value={scoreInputs.home?.[col] || ''} onChange={e => handleScoreInput('home', col, e.target.value)} />
                       ))}
                     </div>
                     <div className="flex items-center mb-2">
-                      <div className="w-24 text-right font-semibold text-primary-700">{away?.name}</div>
+                      <div className="w-24 text-right font-semibold text-primary-700">{awayTeamName}</div>
                       <input className="w-12 text-center border rounded bg-green-50" value={scoreInputs.away?.final || ''} onChange={e => handleScoreInput('away', 'final', e.target.value)} />
                       {columns.map(col => (
                         <input key={col} className="w-12 text-center border rounded" value={scoreInputs.away?.[col] || ''} onChange={e => handleScoreInput('away', col, e.target.value)} />
@@ -678,14 +759,14 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                     {score.home || score.away ? (
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-primary-700">{home?.name}</span>
+                          <span className="font-semibold text-primary-700">{homeTeamName}</span>
                           <span className="bg-green-100 px-2 py-1 rounded font-bold">{score.home?.final || '-'}</span>
                           {columns.map(col => (
                             <span key={col} className="bg-gray-100 px-2 py-1 rounded font-mono">{score.home?.[col] || '-'}</span>
                           ))}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-primary-700">{away?.name}</span>
+                          <span className="font-semibold text-primary-700">{awayTeamName}</span>
                           <span className="bg-green-100 px-2 py-1 rounded font-bold">{score.away?.final || '-'}</span>
                           {columns.map(col => (
                             <span key={col} className="bg-gray-100 px-2 py-1 rounded font-mono">{score.away?.[col] || '-'}</span>
@@ -712,8 +793,14 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
       ) : (
         <div className="space-y-4">
           {upcomingGames.map((game, idx) => {
-            const home = schools.find(s => s.id === game.schoolId);
-            const away = schools.find(s => s.name === game.opponent);
+            // For home team: use schoolName if available, otherwise find by schoolId
+            const homeTeamName = game.schoolName || schools.find(s => s.id === game.schoolId)?.name || 'Unknown Team';
+            const homeSchool = schools.find(s => s.id === game.schoolId);
+            
+            // For away team: use opponent name directly
+            const awayTeamName = game.opponent || 'Unknown Team';
+            const awaySchool = schools.find(s => s.name === game.opponent);
+            
             return (
               <div key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
@@ -723,20 +810,28 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                 </div>
                 <div className="flex items-center justify-between py-2 border-t border-b">
                   <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
-                    {home && home.logoUrl && (
-                      <img src={home.logoUrl} alt={home.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    {homeSchool && homeSchool.logoUrl && (
+                      <img src={homeSchool.logoUrl} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
                     )}
-                    <span className="truncate max-w-[90px]">{home?.name}</span>
+                    <span className="truncate max-w-[120px]">{homeTeamName}</span>
                   </div>
                   <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
                     <span className="text-xs text-primary-400">VS</span>
                   </div>
                   <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
-                    {away && away.logoUrl && (
-                      <img src={away.logoUrl} alt={away.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    {awaySchool && awaySchool.logoUrl && (
+                      <img src={awaySchool.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
                     )}
-                    <span className="truncate max-w-[90px] text-right">{away?.name}</span>
+                    <span className="truncate max-w-[120px] text-right">{awayTeamName}</span>
                   </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button 
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold transition-colors duration-200" 
+                    onClick={() => handleDeleteGame(game.id)}
+                  >
+                    Delete Game
+                  </button>
                 </div>
                 {game.url && (
                   <div className="mt-2 text-blue-600 underline"><a href={game.url} target="_blank" rel="noopener noreferrer">Game Link</a></div>

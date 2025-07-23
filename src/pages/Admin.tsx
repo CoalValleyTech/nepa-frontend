@@ -20,7 +20,14 @@ const Admin = () => {
   const [editingGame, setEditingGame] = useState<{ schoolId: string; sport: string; idx: number } | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [articles, setArticles] = useState<any[]>([]);
-  const [articleForm, setArticleForm] = useState({ title: '', excerpt: '', date: '', category: '' });
+  const [articleForm, setArticleForm] = useState({ 
+    title: '', 
+    excerpt: '', 
+    content: '', 
+    date: '', 
+    category: '',
+    author: ''
+  });
   const [articleImage, setArticleImage] = useState<string | null>(null);
   const handleArticleChange = (field: string, value: string) => setArticleForm(prev => ({ ...prev, [field]: value }));
   const handleArticleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +47,7 @@ const Admin = () => {
     const newArticles = [...articles, { ...articleForm, image: articleImage }];
     setArticles(newArticles);
     localStorage.setItem('articles', JSON.stringify(newArticles));
-    setArticleForm({ title: '', excerpt: '', date: '', category: '' });
+    setArticleForm({ title: '', excerpt: '', content: '', date: '', category: '', author: '' });
     setArticleImage(null);
   };
   const handleDeleteArticle = (idx: number) => {
@@ -289,23 +296,125 @@ const Admin = () => {
                   <h3 className="text-2xl font-bold text-primary-600 mb-4">
                     {articleForm.title || 'Article Title'}
                   </h3>
+                  {articleForm.author && (
+                    <p className="text-sm text-primary-500 mb-3">By {articleForm.author}</p>
+                  )}
                   <p className="text-primary-600 leading-relaxed text-lg mb-6">
                     {articleForm.excerpt || 'Article excerpt will appear here.'}
                   </p>
+                  {articleForm.content && (
+                    <div className="text-primary-600 leading-relaxed text-base mb-6">
+                      <p className="font-semibold mb-2">Full Content Preview:</p>
+                      <div className="whitespace-pre-wrap">
+                        {articleForm.content}
+                      </div>
+                    </div>
+                  )}
                   <button className="text-secondary-500 hover:text-secondary-600 font-semibold text-lg transition-colors duration-200" disabled>
                     Read Full Article →
                   </button>
                 </article>
               </div>
               <div className="bg-white rounded-xl shadow-lg p-6 mb-8 w-full">
-                <div className="mb-4">
-                  <input type="text" placeholder="Title" value={articleForm.title} onChange={e => handleArticleChange('title', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
-                  <input type="text" placeholder="Category" value={articleForm.category} onChange={e => handleArticleChange('category', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
-                  <input type="date" placeholder="Date" value={articleForm.date} onChange={e => handleArticleChange('date', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
-                  <textarea placeholder="Excerpt" value={articleForm.excerpt} onChange={e => handleArticleChange('excerpt', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" rows={3} />
-                  <input type="file" accept="image/*" onChange={handleArticleImageChange} className="w-full mb-2" />
+                <div className="mb-4 space-y-4">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-primary-700 mb-1">Title *</label>
+                      <input 
+                        type="text" 
+                        placeholder="Article Title" 
+                        value={articleForm.title} 
+                        onChange={e => handleArticleChange('title', e.target.value)} 
+                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-primary-700 mb-1">Category *</label>
+                      <input 
+                        type="text" 
+                        placeholder="News, Sports, Announcement, etc." 
+                        value={articleForm.category} 
+                        onChange={e => handleArticleChange('category', e.target.value)} 
+                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-primary-700 mb-1">Date *</label>
+                      <input 
+                        type="date" 
+                        value={articleForm.date} 
+                        onChange={e => handleArticleChange('date', e.target.value)} 
+                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-primary-700 mb-1">Author</label>
+                      <input 
+                        type="text" 
+                        placeholder="Author Name" 
+                        value={articleForm.author} 
+                        onChange={e => handleArticleChange('author', e.target.value)} 
+                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Excerpt */}
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Excerpt *</label>
+                    <textarea 
+                      placeholder="Brief summary of the article (will appear in preview)" 
+                      value={articleForm.excerpt} 
+                      onChange={e => handleArticleChange('excerpt', e.target.value)} 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      rows={3}
+                    />
+                  </div>
+                  
+                  {/* Full Content */}
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Full Content</label>
+                    <div className="mb-2 text-xs text-primary-600">
+                      <p>• Use double line breaks for paragraphs</p>
+                      <p>• Use <strong>**bold text**</strong> for emphasis</p>
+                      <p>• Use <em>*italic text*</em> for italics</p>
+                    </div>
+                    <textarea 
+                      placeholder="Full article content with proper formatting..." 
+                      value={articleForm.content} 
+                      onChange={e => handleArticleChange('content', e.target.value)} 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      rows={8}
+                    />
+                  </div>
+                  
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Featured Image</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleArticleImageChange} 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                    />
+                    {articleImage && (
+                      <div className="mt-2">
+                        <img src={articleImage} alt="Preview" className="w-32 h-32 object-cover rounded border" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-semibold w-full" onClick={handleAddArticle}>Add Article</button>
+                <button 
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold w-full transition-colors duration-200" 
+                  onClick={handleAddArticle}
+                  disabled={!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category}
+                >
+                  Add Article
+                </button>
               </div>
               <h3 className="text-xl font-semibold text-primary-700 mb-2">Existing Articles</h3>
               <ul className="w-full space-y-4">

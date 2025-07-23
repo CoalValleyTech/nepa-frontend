@@ -275,20 +275,45 @@ export const addSportToSchool = async (schoolId: string, sport: string): Promise
 }; 
 
 export const addScheduleToGlobal = async (
-  schoolId: string,
+  schoolId: string | undefined,
   schoolName: string,
   sport: string,
   entry: ScheduleEntry
 ): Promise<void> => {
   try {
-    await addDoc(collection(db, 'schedules'), {
-      schoolId,
+    console.log('addScheduleToGlobal called with:', { schoolId, schoolName, sport, entry });
+    
+    // Create the base document data
+    const scheduleData: any = {
       schoolName,
       sport,
-      ...entry,
+      location: entry.location,
+      time: entry.time,
+      opponent: entry.opponent,
       createdAt: serverTimestamp(),
-    });
+    };
+    
+    // Add optional fields only if they have values
+    if (entry.status) {
+      scheduleData.status = entry.status;
+    }
+    if (entry.score) {
+      scheduleData.score = entry.score;
+    }
+    if (entry.url) {
+      scheduleData.url = entry.url;
+    }
+    
+    // Only add schoolId if it's provided and not undefined
+    if (schoolId && schoolId !== undefined) {
+      scheduleData.schoolId = schoolId;
+    }
+    
+    console.log('Final scheduleData being saved:', scheduleData);
+    
+    await addDoc(collection(db, 'schedules'), scheduleData);
   } catch (error: any) {
+    console.error('Error in addScheduleToGlobal:', error);
     throw new Error('Failed to add schedule to global collection: ' + error.message);
   }
 };
