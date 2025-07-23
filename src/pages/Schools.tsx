@@ -100,9 +100,9 @@ const Schools = () => {
                           <span className="text-primary-500 text-xs font-medium">LOGO</span>
                         </div>
                       )}
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-primary-700">{school.name}</h3>
-                        <p className="text-primary-500">{school.location}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-bold text-primary-700 break-words leading-tight">{school.name}</h3>
+                        <p className="text-primary-500 break-words leading-tight">{school.location}</p>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">

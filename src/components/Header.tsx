@@ -103,8 +103,8 @@ const Header = () => {
                                 </div>
                               )}
                               <div className="flex flex-col flex-1 min-w-0">
-                                <span className="font-semibold text-lg text-primary-800 truncate">{school.name}</span>
-                                <span className="text-primary-500 text-sm truncate">{school.location}</span>
+                                <span className="font-semibold text-lg text-primary-800 break-words leading-tight">{school.name}</span>
+                                <span className="text-primary-500 text-sm break-words leading-tight">{school.location}</span>
                               </div>
                             </Link>
                           ))

@@ -151,7 +151,7 @@ const HomeStatic = () => {
                               {score.homeTeam.charAt(0)}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-primary-600 truncate">
+                          <span className="text-sm font-semibold text-primary-600 break-words leading-tight">
                             {score.homeTeam}
                           </span>
                         </div>
@@ -161,7 +161,7 @@ const HomeStatic = () => {
                         </div>
                         {/* Away Team */}
                         <div className="flex items-center space-x-2 flex-1 min-w-0 justify-end">
-                          <span className="text-sm font-semibold text-primary-600 truncate">
+                          <span className="text-sm font-semibold text-primary-600 break-words leading-tight">
                             {score.awayTeam}
                           </span>
                           <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -207,7 +207,7 @@ const HomeStatic = () => {
                               {game.homeTeam.charAt(0)}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-primary-600 truncate">
+                          <span className="text-sm font-semibold text-primary-600 break-words leading-tight">
                             {game.homeTeam}
                           </span>
                         </div>
@@ -217,7 +217,7 @@ const HomeStatic = () => {
                         </div>
                         {/* Away Team */}
                         <div className="flex items-center space-x-2 flex-1 min-w-0 justify-end">
-                          <span className="text-sm font-semibold text-primary-600 truncate">
+                          <span className="text-sm font-semibold text-primary-600 break-words leading-tight">
                             {game.awayTeam}
                           </span>
                           <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -227,7 +227,7 @@ const HomeStatic = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs text-primary-500 truncate">
+                      <div className="text-xs text-primary-500 break-words leading-tight">
                         📍 {game.venue}
                       </div>
                     </div>

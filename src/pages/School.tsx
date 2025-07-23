@@ -84,9 +84,9 @@ const SchoolPage = () => {
                 </div>
                 
                 {/* School Info */}
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-primary-700 mb-2">{school.name}</h1>
-                  <div className="text-xl text-primary-500">{school.location}</div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-4xl font-bold text-primary-700 mb-2 break-words leading-tight">{school.name}</h1>
+                  <div className="text-xl text-primary-500 break-words leading-tight">{school.location}</div>
                 </div>
               </div>
             </div>
@@ -96,7 +96,7 @@ const SchoolPage = () => {
               {/* Sports Sidebar */}
               <div className="lg:w-80">
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h2 className="text-2xl font-semibold text-primary-600 mb-4">Sports</h2>
+                  <h2 className="text-2xl font-semibold text-primary-600 mb-4 break-words leading-tight">Sports</h2>
                   {school.sports && school.sports.length > 0 ? (
                     <div className="space-y-3">
                       {school.sports.map((sport, idx) => (
@@ -106,7 +106,7 @@ const SchoolPage = () => {
                           className={`w-full text-left px-4 py-3 rounded-lg font-medium shadow-sm transition-colors border border-primary-200 focus:outline-none
                             ${selectedSport === sport ? 'bg-primary-500 text-white' : 'bg-primary-50 text-primary-700 hover:bg-primary-100'}`}
                         >
-                          <span className="text-lg">{sport.charAt(0).toUpperCase() + sport.slice(1)}</span>
+                          <span className="text-lg break-words leading-tight">{sport.charAt(0).toUpperCase() + sport.slice(1)}</span>
                         </button>
                       ))}
                     </div>
@@ -123,7 +123,7 @@ const SchoolPage = () => {
                 {/* Schedule for selected sport */}
                 {selectedSport && school.schedules && school.schedules[selectedSport] && school.schedules[selectedSport].length > 0 ? (
                   <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-2xl font-semibold text-primary-600 mb-4">{selectedSport.charAt(0).toUpperCase() + selectedSport.slice(1)} Schedule</h2>
+                    <h2 className="text-2xl font-semibold text-primary-600 mb-4 break-words leading-tight">{selectedSport.charAt(0).toUpperCase() + selectedSport.slice(1)} Schedule</h2>
                     <ul className="space-y-3">
                       {school.schedules[selectedSport]
                         .slice()
@@ -133,7 +133,8 @@ const SchoolPage = () => {
                           const opponentSchool = allSchools.find((s: any) => s.name === game.opponent);
                           const opponentLogo = opponentSchool?.logoUrl || sportIcons[selectedSport] || '/default-football-helmet.png';
                           return (
-                            <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-green-50 p-4 rounded-lg w-full shadow-sm border border-green-100">
+                            <li key={idx} className="flex flex-col gap-3 bg-green-50 p-4 rounded-lg w-full shadow-sm border border-green-100">
+                              {/* Teams Section */}
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {/* School Logo */}
                                 {school.logoUrl ? (
@@ -141,14 +142,19 @@ const SchoolPage = () => {
                                 ) : (
                                   <img src={sportIcons[selectedSport] || '/default-football-helmet.png'} alt="Default logo" className="h-10 w-10 object-contain rounded bg-white border border-green-200 flex-shrink-0" />
                                 )}
-                                <span className="font-bold text-green-800 text-lg">{school.name}</span>
-                                <span className="text-green-700 font-semibold mx-2">vs</span>
+                                <span className="font-bold text-green-800 text-lg break-words leading-tight">{school.name}</span>
+                                <span className="text-green-700 font-semibold mx-2 flex-shrink-0">vs</span>
                                 {/* Opponent Logo */}
                                 <img src={opponentLogo} alt={game.opponent + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-green-200 flex-shrink-0" />
-                                <span className="font-bold text-green-700 text-lg">{game.opponent}</span>
-                                <span className="ml-4 text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                                <span className="ml-2 text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleDateString() : ''}</span>
-                                <span className="ml-2 text-green-500 font-normal">| {game.location}</span>
+                                <span className="font-bold text-green-700 text-lg break-words leading-tight">{game.opponent}</span>
+                              </div>
+                              {/* Game Details Section */}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                  <span className="text-green-600 font-medium">{game.time ? new Date(game.time).toLocaleDateString() : ''}</span>
+                                </div>
+                                <span className="text-green-500 font-normal break-words leading-tight">📍 {game.location}</span>
                               </div>
                             </li>
                           );

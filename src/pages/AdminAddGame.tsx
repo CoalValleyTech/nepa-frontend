@@ -30,6 +30,8 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamLogo, setNewTeamLogo] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [url, setUrl] = useState('');
+  const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
 
   // Default sport icons
   const sportIcons: Record<string, string> = {
@@ -46,8 +48,10 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
     try {
       const allGames = await getGlobalSchedules();
       setLiveGames(allGames.filter((g: any) => g.status && g.status.toUpperCase() === 'LIVE'));
+      setUpcomingGames(allGames.filter((g: any) => g.status && g.status.toUpperCase() === 'UPCOMING'));
     } catch {
       setLiveGames([]);
+      setUpcomingGames([]);
     } finally {
       setLoadingGames(false);
     }
@@ -156,6 +160,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           time,
           opponent: schools.find(s => s.id === awayTeam)?.name || '',
           status: 'LIVE',
+          url,
         }
       );
       setMessage('Live game added!');
@@ -164,6 +169,7 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
       setSport('');
       setLocation('');
       setTime('');
+      setUrl('');
       fetchLiveGames();
     } catch (err: any) {
       setError(err.message || 'Failed to add game.');
@@ -359,6 +365,17 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
             disabled={isSubmitting}
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-primary-700 mb-1">Game URL (optional)</label>
+          <input
+            type="url"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+            placeholder="https://example.com/stream"
+            disabled={isSubmitting}
+          />
+        </div>
         {error && <div className="text-red-600 text-center font-bold">{error}</div>}
         {message && <div className="text-green-600 text-center font-bold">{message}</div>}
         <button
@@ -367,6 +384,226 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
           className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
         >
           {isSubmitting ? 'Adding...' : 'Add Live Game'}
+        </button>
+      </form>
+      <h2 className="text-2xl font-bold text-primary-700 mb-6 mt-12">Add Upcoming Game</h2>
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        setError('');
+        setMessage('');
+        if (!homeTeam || !awayTeam || !sport || !location || !time) {
+          setError('Please fill out all fields.');
+          return;
+        }
+        if (homeTeam === awayTeam) {
+          setError('Home and away teams must be different.');
+          return;
+        }
+        setIsSubmitting(true);
+        try {
+          const homeSchool = schools.find(s => s.id === homeTeam);
+          await addScheduleToGlobal(
+            homeSchool?.id,
+            homeSchool?.name,
+            sport,
+            {
+              location,
+              time,
+              opponent: schools.find(s => s.id === awayTeam)?.name || '',
+              status: 'UPCOMING',
+              url,
+            }
+          );
+          setMessage('Upcoming game added!');
+          setHomeTeam('');
+          setAwayTeam('');
+          setSport('');
+          setLocation('');
+          setTime('');
+          setUrl('');
+          fetchLiveGames();
+        } catch (err: any) {
+          setError(err.message || 'Failed to add game.');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }} className="bg-white rounded-xl shadow-lg p-6 mb-8 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-primary-700 mb-1">Home Team</label>
+            <select
+              value={homeTeam}
+              onChange={e => {
+                if (e.target.value === '__add_new__') {
+                  setShowAddTeam('home');
+                } else {
+                  setHomeTeam(e.target.value);
+                }
+              }}
+              className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+              required
+              disabled={isSubmitting}
+            >
+              <option value="">Select home team</option>
+              {schools.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+                <option key={team.name + i} value={team.name}>{team.name} (External)</option>
+              ))}
+              <option value="__add_new__">+ Add New Team</option>
+            </select>
+            {showAddTeam === 'home' && (
+              <div className="bg-white border border-primary-200 rounded-lg p-4 mt-2 shadow-lg z-50">
+                <div className="mb-2 font-semibold text-primary-700">Add New Home Team</div>
+                <input
+                  type="text"
+                  placeholder="Team Name"
+                  value={newTeamName}
+                  onChange={e => setNewTeamName(e.target.value)}
+                  className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={e => setNewTeamLogo(e.target.files?.[0] || null)}
+                  className="w-full mb-2"
+                />
+                <button
+                  type="button"
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-1 rounded mr-2"
+                  onClick={() => handleAddExternalTeam('home')}
+                >
+                  Add Team
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-700 px-4 py-1 rounded"
+                  onClick={() => setShowAddTeam(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-primary-700 mb-1">Away Team</label>
+            <select
+              value={awayTeam}
+              onChange={e => {
+                if (e.target.value === '__add_new__') {
+                  setShowAddTeam('away');
+                } else {
+                  setAwayTeam(e.target.value);
+                }
+              }}
+              className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+              required
+              disabled={isSubmitting}
+            >
+              <option value="">Select away team</option>
+              {schools.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+              {externalTeams.filter(team => team.sport === sport).map((team, i) => (
+                <option key={team.name + i} value={team.name}>{team.name} (External)</option>
+              ))}
+              <option value="__add_new__">+ Add New Team</option>
+            </select>
+            {showAddTeam === 'away' && (
+              <div className="bg-white border border-primary-200 rounded-lg p-4 mt-2 shadow-lg z-50">
+                <div className="mb-2 font-semibold text-primary-700">Add New Away Team</div>
+                <input
+                  type="text"
+                  placeholder="Team Name"
+                  value={newTeamName}
+                  onChange={e => setNewTeamName(e.target.value)}
+                  className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={e => setNewTeamLogo(e.target.files?.[0] || null)}
+                  className="w-full mb-2"
+                />
+                <button
+                  type="button"
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-1 rounded mr-2"
+                  onClick={() => handleAddExternalTeam('away')}
+                >
+                  Add Team
+                </button>
+                <button
+                  type="button"
+                  className="bg-gray-200 text-gray-700 px-4 py-1 rounded"
+                  onClick={() => setShowAddTeam(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-primary-700 mb-1">Sport</label>
+            <select
+              value={sport}
+              onChange={e => setSport(e.target.value)}
+              className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+              required
+              disabled={isSubmitting}
+            >
+              <option value="">Select sport</option>
+              {SPORTS.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-primary-700 mb-1">Location</label>
+            <input
+              type="text"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+              required
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-primary-700 mb-1">Time</label>
+          <input
+            type="datetime-local"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+            className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-primary-700 mb-1">Game URL (optional)</label>
+          <input
+            type="url"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-primary-200 rounded-lg"
+            placeholder="https://example.com/stream"
+            disabled={isSubmitting}
+          />
+        </div>
+        {error && <div className="text-red-600 text-center font-bold">{error}</div>}
+        {message && <div className="text-green-600 text-center font-bold">{message}</div>}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+        >
+          {isSubmitting ? 'Adding...' : 'Add Upcoming Game'}
         </button>
       </form>
       <h3 className="text-xl font-semibold text-primary-700 mb-4">Live Games</h3>
@@ -461,6 +698,48 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
                     <button className="ml-auto bg-primary-500 hover:bg-primary-600 text-white px-4 py-1 rounded" onClick={() => { setEditingGameId(game.id); setScoreInputs(score || {}); }}>Edit</button>
                     <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded" onClick={() => handleDeleteGame(game.id)}>Delete Game</button>
                   </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <h3 className="text-xl font-semibold text-primary-700 mb-4">Upcoming Games</h3>
+      {loadingGames ? (
+        <div className="text-center py-4">Loading...</div>
+      ) : upcomingGames.length === 0 ? (
+        <div className="text-primary-400 text-center">No upcoming games.</div>
+      ) : (
+        <div className="space-y-4">
+          {upcomingGames.map((game, idx) => {
+            const home = schools.find(s => s.id === game.schoolId);
+            const away = schools.find(s => s.name === game.opponent);
+            return (
+              <div key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
+                  <div className="text-primary-700 font-medium">{game.sport && game.sport.charAt(0).toUpperCase() + game.sport.slice(1)}</div>
+                  <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
+                  <div className="text-primary-500 text-sm mt-1 sm:mt-0">{game.time && new Date(game.time).toLocaleString()}</div>
+                </div>
+                <div className="flex items-center justify-between py-2 border-t border-b">
+                  <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
+                    {home && home.logoUrl && (
+                      <img src={home.logoUrl} alt={home.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    )}
+                    <span className="truncate max-w-[90px]">{home?.name}</span>
+                  </div>
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
+                    <span className="text-xs text-primary-400">VS</span>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
+                    {away && away.logoUrl && (
+                      <img src={away.logoUrl} alt={away.name + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
+                    )}
+                    <span className="truncate max-w-[90px] text-right">{away?.name}</span>
+                  </div>
+                </div>
+                {game.url && (
+                  <div className="mt-2 text-blue-600 underline"><a href={game.url} target="_blank" rel="noopener noreferrer">Game Link</a></div>
                 )}
               </div>
             );

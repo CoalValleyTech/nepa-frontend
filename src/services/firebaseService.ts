@@ -37,6 +37,7 @@ export interface ScheduleEntry {
   opponent: string;
   status?: string;
   score?: any;
+  url?: string;
 }
 
 // Schools Collection

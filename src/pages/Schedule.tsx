@@ -75,10 +75,10 @@ const Schedule = () => {
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
       <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-screen-lg grid grid-cols-1 md:grid-cols-3 gap-12 justify-center mx-auto">
+        <div className="w-full max-w-screen-2xl grid grid-cols-1 md:grid-cols-3 gap-24 justify-center mx-auto">
           {/* Box 1: Today's Games */}
-          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col min-h-[350px] w-full max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary-700 mb-6">Today's Games</h2>
+          <div className="bg-white rounded-2xl shadow-2xl p-20 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
+            <h2 className="text-5xl font-bold text-primary-700 mb-14">Today's Games</h2>
             {loading ? (
               <div className="text-center py-4">Loading...</div>
             ) : error ? (
@@ -99,7 +99,7 @@ const Schedule = () => {
                         {game.schoolId && schoolLogoMap[game.schoolId] && (
                           <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                         )}
-                        <span className="font-bold text-xl text-primary-600 truncate">{game.schoolName}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight">{game.schoolName}</span>
                         {game.score && game.score.home && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.home.final ?? '-'}</span>
                         )}
@@ -115,7 +115,7 @@ const Schedule = () => {
                             <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                           ) : null;
                         })()}
-                        <span className="font-bold text-xl text-primary-600 truncate text-right">{game.opponent}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight text-right">{game.opponent}</span>
                         {game.score && game.score.away && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.away.final ?? '-'}</span>
                         )}
@@ -127,8 +127,8 @@ const Schedule = () => {
             )}
           </div>
           {/* Box 2: Live Games */}
-          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col min-h-[350px] w-full max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary-700 mb-6">Live Games</h2>
+          <div className="bg-white rounded-2xl shadow-2xl p-20 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
+            <h2 className="text-5xl font-bold text-primary-700 mb-14">Live Games</h2>
             {loading ? (
               <div className="text-center py-4">Loading...</div>
             ) : error ? (
@@ -150,7 +150,7 @@ const Schedule = () => {
                         {game.schoolId && schoolLogoMap[game.schoolId] && (
                           <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                         )}
-                        <span className="font-bold text-xl text-primary-600 truncate">{game.schoolName}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight">{game.schoolName}</span>
                         {game.score && game.score.home && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.home.final ?? '-'}</span>
                         )}
@@ -166,7 +166,7 @@ const Schedule = () => {
                             <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                           ) : null;
                         })()}
-                        <span className="font-bold text-xl text-primary-600 truncate text-right">{game.opponent}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight text-right">{game.opponent}</span>
                         {game.score && game.score.away && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.away.final ?? '-'}</span>
                         )}
@@ -178,8 +178,8 @@ const Schedule = () => {
             )}
           </div>
           {/* Box 3: Find a Game */}
-          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col min-h-[350px] w-full max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary-700 mb-6">Find a Game</h2>
+          <div className="bg-white rounded-2xl shadow-2xl p-20 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
+            <h2 className="text-5xl font-bold text-primary-700 mb-14">Find a Game</h2>
             {/* Filters */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6 items-center w-full">
               <div>
@@ -239,7 +239,7 @@ const Schedule = () => {
                         {game.schoolId && schoolLogoMap[game.schoolId] && (
                           <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                         )}
-                        <span className="font-bold text-xl text-primary-600 truncate">{game.schoolName}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight">{game.schoolName}</span>
                         {game.score && game.score.home && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.home.final ?? '-'}</span>
                         )}
@@ -255,7 +255,7 @@ const Schedule = () => {
                             <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                           ) : null;
                         })()}
-                        <span className="font-bold text-xl text-primary-600 truncate text-right">{game.opponent}</span>
+                        <span className="font-bold text-xl text-primary-600 break-words leading-tight text-right">{game.opponent}</span>
                         {game.score && game.score.away && (
                           <span className="bg-green-100 px-3 py-1 rounded font-bold text-lg ml-2 flex-shrink-0">{game.score.away.final ?? '-'}</span>
                         )}

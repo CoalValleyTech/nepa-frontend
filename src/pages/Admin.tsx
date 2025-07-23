@@ -21,18 +21,50 @@ const Admin = () => {
   const [editForm, setEditForm] = useState<any>({});
   const [articles, setArticles] = useState<any[]>([]);
   const [articleForm, setArticleForm] = useState({ title: '', excerpt: '', date: '', category: '' });
+  const [articleImage, setArticleImage] = useState<string | null>(null);
   const handleArticleChange = (field: string, value: string) => setArticleForm(prev => ({ ...prev, [field]: value }));
+  const handleArticleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setArticleImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setArticleImage(null);
+    }
+  };
   const handleAddArticle = () => {
     if (!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category) return;
-    const newArticles = [...articles, { ...articleForm }];
+    const newArticles = [...articles, { ...articleForm, image: articleImage }];
     setArticles(newArticles);
     localStorage.setItem('articles', JSON.stringify(newArticles));
     setArticleForm({ title: '', excerpt: '', date: '', category: '' });
+    setArticleImage(null);
   };
   const handleDeleteArticle = (idx: number) => {
     const newArticles = articles.filter((_, i) => i !== idx);
     setArticles(newArticles);
     localStorage.setItem('articles', JSON.stringify(newArticles));
+  };
+  const [archivedArticles, setArchivedArticles] = useState<any[]>(() => {
+    const stored = localStorage.getItem('archivedArticles');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const handleArchiveArticle = (idx: number) => {
+    const articleToArchive = articles[idx];
+    const newArticles = articles.filter((_, i) => i !== idx);
+    const newArchived = [articleToArchive, ...archivedArticles];
+    setArticles(newArticles);
+    setArchivedArticles(newArchived);
+    localStorage.setItem('articles', JSON.stringify(newArticles));
+    localStorage.setItem('archivedArticles', JSON.stringify(newArchived));
+  };
+  const handleDeleteArchivedArticle = (idx: number) => {
+    const newArchived = archivedArticles.filter((_, i) => i !== idx);
+    setArchivedArticles(newArchived);
+    localStorage.setItem('archivedArticles', JSON.stringify(newArchived));
   };
 
   useEffect(() => {
@@ -241,12 +273,37 @@ const Admin = () => {
           {activeTab === 'addArticle' && (
             <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
               <h2 className="text-2xl font-bold text-primary-700 mb-4">Add Article</h2>
+              {/* Article Preview */}
+              <div className="w-full max-w-lg mx-auto bg-cream-100 rounded-lg p-6 shadow-lg mb-8">
+                <h4 className="text-lg font-bold text-primary-700 mb-2">Article Preview</h4>
+                <article className="transition-opacity duration-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-semibold text-secondary-500 bg-secondary-100 px-3 py-1 rounded-full">
+                      {articleForm.category || 'Category'}
+                    </span>
+                    <span className="text-sm text-primary-500">{articleForm.date || 'Date'}</span>
+                  </div>
+                  {articleImage && (
+                    <img src={articleImage} alt="Preview" className="w-full h-48 object-cover rounded mb-4" />
+                  )}
+                  <h3 className="text-2xl font-bold text-primary-600 mb-4">
+                    {articleForm.title || 'Article Title'}
+                  </h3>
+                  <p className="text-primary-600 leading-relaxed text-lg mb-6">
+                    {articleForm.excerpt || 'Article excerpt will appear here.'}
+                  </p>
+                  <button className="text-secondary-500 hover:text-secondary-600 font-semibold text-lg transition-colors duration-200" disabled>
+                    Read Full Article →
+                  </button>
+                </article>
+              </div>
               <div className="bg-white rounded-xl shadow-lg p-6 mb-8 w-full">
                 <div className="mb-4">
                   <input type="text" placeholder="Title" value={articleForm.title} onChange={e => handleArticleChange('title', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
                   <input type="text" placeholder="Category" value={articleForm.category} onChange={e => handleArticleChange('category', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
                   <input type="date" placeholder="Date" value={articleForm.date} onChange={e => handleArticleChange('date', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" />
                   <textarea placeholder="Excerpt" value={articleForm.excerpt} onChange={e => handleArticleChange('excerpt', e.target.value)} className="w-full mb-2 px-3 py-2 border border-primary-200 rounded-lg" rows={3} />
+                  <input type="file" accept="image/*" onChange={handleArticleImageChange} className="w-full mb-2" />
                 </div>
                 <button className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-semibold w-full" onClick={handleAddArticle}>Add Article</button>
               </div>
@@ -259,11 +316,34 @@ const Admin = () => {
                       <div className="font-bold text-primary-700 text-lg">{article.title}</div>
                       <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
                       <div className="text-primary-600">{article.excerpt}</div>
+                      {article.image && <img src={article.image} alt="Article" className="w-full max-w-xs mt-2 rounded" />}
                     </div>
-                    <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArticle(idx)}>Delete</button>
+                    <div className="flex gap-2">
+                      <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleArchiveArticle(idx)}>Archive</button>
+                      <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArticle(idx)}>Delete</button>
+                    </div>
                   </li>
                 ))}
               </ul>
+              {/* Archived Articles Section */}
+              {archivedArticles.length > 0 && (
+                <div className="w-full mt-10">
+                  <h3 className="text-xl font-semibold text-primary-700 mb-2">Archived Articles</h3>
+                  <ul className="w-full space-y-4">
+                    {archivedArticles.map((article, idx) => (
+                      <li key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2 opacity-70">
+                        <div className="flex-1">
+                          <div className="font-bold text-primary-700 text-lg">{article.title}</div>
+                          <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
+                          <div className="text-primary-600">{article.excerpt}</div>
+                          {article.image && <img src={article.image} alt="Article" className="w-full max-w-xs mt-2 rounded" />}
+                        </div>
+                        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArchivedArticle(idx)}>Delete</button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>
