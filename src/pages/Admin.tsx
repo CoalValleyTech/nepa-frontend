@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { School, getSchools, updateSchoolScheduleEntry, deleteScheduleEntry } from '../services/firebaseService';
+import { School, getSchools, updateSchoolScheduleEntry, deleteScheduleEntry, addArticle, getArticles, deleteArticle, Article } from '../services/firebaseService';
 import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
@@ -19,14 +19,13 @@ const Admin = () => {
   const [expandedSport, setExpandedSport] = useState<{ [schoolId: string]: string | null }>({});
   const [editingGame, setEditingGame] = useState<{ schoolId: string; sport: string; idx: number } | null>(null);
   const [editForm, setEditForm] = useState<any>({});
-  const [articles, setArticles] = useState<any[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [articleForm, setArticleForm] = useState({ 
     title: '', 
     excerpt: '', 
     content: '', 
     date: '', 
-    category: '',
-    author: ''
+    category: ''
   });
   const [articleImage, setArticleImage] = useState<string | null>(null);
   const handleArticleChange = (field: string, value: string) => setArticleForm(prev => ({ ...prev, [field]: value }));
@@ -42,20 +41,54 @@ const Admin = () => {
       setArticleImage(null);
     }
   };
-  const handleAddArticle = () => {
-    if (!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category) return;
-    const newArticles = [...articles, { ...articleForm, image: articleImage }];
-    setArticles(newArticles);
-    localStorage.setItem('articles', JSON.stringify(newArticles));
-    setArticleForm({ title: '', excerpt: '', content: '', date: '', category: '', author: '' });
-    setArticleImage(null);
+  const handleAddArticle = async () => {
+    console.log('handleAddArticle called');
+    console.log('articleForm:', articleForm);
+    console.log('articleImage:', articleImage);
+    
+    if (!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category) {
+      console.log('Validation failed:');
+      console.log('title:', articleForm.title);
+      console.log('excerpt:', articleForm.excerpt);
+      console.log('date:', articleForm.date);
+      console.log('category:', articleForm.category);
+      return;
+    }
+    
+    try {
+      console.log('Adding article to Firebase...');
+      
+      // Create article data without undefined fields
+      const articleData: any = {
+        title: articleForm.title,
+        excerpt: articleForm.excerpt,
+        content: articleForm.content,
+        date: articleForm.date,
+        category: articleForm.category
+      };
+      
+      // Only add image if it exists
+      if (articleImage) {
+        articleData.image = articleImage;
+      }
+      
+      await addArticle(articleData);
+      console.log('Article added successfully');
+      setArticleForm({ title: '', excerpt: '', content: '', date: '', category: '' });
+      setArticleImage(null);
+      loadArticles();
+    } catch (error) {
+      console.error('Error adding article:', error);
+    }
   };
-  const handleDeleteArticle = (idx: number) => {
-    const newArticles = articles.filter((_, i) => i !== idx);
-    setArticles(newArticles);
-    localStorage.setItem('articles', JSON.stringify(newArticles));
+  const handleDeleteArticle = async (idx: number) => {
+    const articleToDelete = articles[idx];
+    if (articleToDelete.id) {
+      await deleteArticle(articleToDelete.id);
+      setArticles(articles.filter((_, i) => i !== idx));
+    }
   };
-  const [archivedArticles, setArchivedArticles] = useState<any[]>(() => {
+  const [archivedArticles, setArchivedArticles] = useState<Article[]>(() => {
     const stored = localStorage.getItem('archivedArticles');
     return stored ? JSON.parse(stored) : [];
   });
@@ -83,6 +116,7 @@ const Admin = () => {
       } else {
         setLoading(false);
         loadSchools();
+        loadArticles();
       }
     });
     return () => unsubscribe();
@@ -97,6 +131,15 @@ const Admin = () => {
       // Optionally handle error
     } finally {
       setSchoolsLoading(false);
+    }
+  };
+
+  const loadArticles = async () => {
+    try {
+      const articlesData = await getArticles();
+      setArticles(articlesData);
+    } catch (error) {
+      console.error("Error loading articles:", error);
     }
   };
 
@@ -296,9 +339,6 @@ const Admin = () => {
                   <h3 className="text-2xl font-bold text-primary-600 mb-4">
                     {articleForm.title || 'Article Title'}
                   </h3>
-                  {articleForm.author && (
-                    <p className="text-sm text-primary-500 mb-3">By {articleForm.author}</p>
-                  )}
                   <p className="text-primary-600 leading-relaxed text-lg mb-6">
                     {articleForm.excerpt || 'Article excerpt will appear here.'}
                   </p>
@@ -326,8 +366,9 @@ const Admin = () => {
                         placeholder="Article Title" 
                         value={articleForm.title} 
                         onChange={e => handleArticleChange('title', e.target.value)} 
-                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.title ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
                       />
+                      {!articleForm.title && <p className="text-red-500 text-xs mt-1">Title is required</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-primary-700 mb-1">Category *</label>
@@ -336,8 +377,9 @@ const Admin = () => {
                         placeholder="News, Sports, Announcement, etc." 
                         value={articleForm.category} 
                         onChange={e => handleArticleChange('category', e.target.value)} 
-                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.category ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
                       />
+                      {!articleForm.category && <p className="text-red-500 text-xs mt-1">Category is required</p>}
                     </div>
                   </div>
                   
@@ -348,18 +390,12 @@ const Admin = () => {
                         type="date" 
                         value={articleForm.date} 
                         onChange={e => handleArticleChange('date', e.target.value)} 
-                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.date ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
                       />
+                      {!articleForm.date && <p className="text-red-500 text-xs mt-1">Date is required</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-primary-700 mb-1">Author</label>
-                      <input 
-                        type="text" 
-                        placeholder="Author Name" 
-                        value={articleForm.author} 
-                        onChange={e => handleArticleChange('author', e.target.value)} 
-                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                      />
+                      {/* Empty div for grid layout */}
                     </div>
                   </div>
                   
@@ -370,9 +406,10 @@ const Admin = () => {
                       placeholder="Brief summary of the article (will appear in preview)" 
                       value={articleForm.excerpt} 
                       onChange={e => handleArticleChange('excerpt', e.target.value)} 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.excerpt ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
                       rows={3}
                     />
+                    {!articleForm.excerpt && <p className="text-red-500 text-xs mt-1">Excerpt is required</p>}
                   </div>
                   
                   {/* Full Content */}
@@ -409,18 +446,23 @@ const Admin = () => {
                   </div>
                 </div>
                 <button 
-                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold w-full transition-colors duration-200" 
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold w-full transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed" 
                   onClick={handleAddArticle}
                   disabled={!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category}
                 >
                   Add Article
                 </button>
+                {/* Debug info - remove this after testing */}
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>Debug: Title: "{articleForm.title}" | Excerpt: "{articleForm.excerpt}" | Date: "{articleForm.date}" | Category: "{articleForm.category}"</p>
+                  <p>Button disabled: {(!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category).toString()}</p>
+                </div>
               </div>
               <h3 className="text-xl font-semibold text-primary-700 mb-2">Existing Articles</h3>
               <ul className="w-full space-y-4">
                 {articles.length === 0 && <li className="text-primary-400">No articles yet.</li>}
                 {articles.map((article, idx) => (
-                  <li key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2">
+                  <li key={article.id} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2">
                     <div className="flex-1">
                       <div className="font-bold text-primary-700 text-lg">{article.title}</div>
                       <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
@@ -440,7 +482,7 @@ const Admin = () => {
                   <h3 className="text-xl font-semibold text-primary-700 mb-2">Archived Articles</h3>
                   <ul className="w-full space-y-4">
                     {archivedArticles.map((article, idx) => (
-                      <li key={idx} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2 opacity-70">
+                      <li key={article.id} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2 opacity-70">
                         <div className="flex-1">
                           <div className="font-bold text-primary-700 text-lg">{article.title}</div>
                           <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>

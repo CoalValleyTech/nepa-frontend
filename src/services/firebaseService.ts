@@ -40,6 +40,18 @@ export interface ScheduleEntry {
   url?: string;
 }
 
+export interface Article {
+  id?: string;
+  title: string;
+  excerpt: string;
+  content?: string;
+  date: string;
+  category: string;
+  image?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
 // Schools Collection
 const SCHOOLS_COLLECTION = 'schools';
 
@@ -468,4 +480,79 @@ export const updateScoreForBothSchools = async (
     { location, time, opponent: homeName },
     { location, time, opponent: homeName, score, status }
   );
+}; 
+
+// Articles Collection
+const ARTICLES_COLLECTION = 'articles';
+
+// Add a new article
+export const addArticle = async (articleData: Omit<Article, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+  try {
+    console.log('Starting addArticle function with data:', articleData);
+    
+    const firestorePayload = {
+      ...articleData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    
+    console.log('=== FIRESTORE PAYLOAD ===\n' + JSON.stringify(firestorePayload, null, 2));
+    const docRef = await addDoc(collection(db, ARTICLES_COLLECTION), firestorePayload);
+
+    console.log('Article added to Firestore with ID:', docRef.id);
+    return docRef.id;
+  } catch (error: any) {
+    console.error('Error in addArticle function:', error);
+    throw new Error(`Failed to add article: ${error.message}`);
+  }
+};
+
+// Get all articles
+export const getArticles = async (): Promise<Article[]> => {
+  try {
+    console.log('Starting getArticles function');
+    
+    const q = query(collection(db, ARTICLES_COLLECTION), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    console.log('Query executed, got', querySnapshot.docs.length, 'articles');
+    
+    const articles = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Article[];
+    
+    console.log('Articles processed:', articles);
+    return articles;
+  } catch (error: any) {
+    console.error('Error in getArticles function:', error);
+    throw new Error(`Failed to fetch articles: ${error.message}`);
+  }
+};
+
+// Delete an article
+export const deleteArticle = async (articleId: string): Promise<void> => {
+  try {
+    console.log('Starting deleteArticle function for ID:', articleId);
+    await deleteDoc(doc(db, ARTICLES_COLLECTION, articleId));
+    console.log('Article deleted from Firestore');
+  } catch (error: any) {
+    console.error('Error in deleteArticle function:', error);
+    throw new Error(`Failed to delete article: ${error.message}`);
+  }
+};
+
+// Update an article
+export const updateArticle = async (articleId: string, updates: Partial<Article>): Promise<void> => {
+  try {
+    console.log('Starting updateArticle function for ID:', articleId);
+    await updateDoc(doc(db, ARTICLES_COLLECTION, articleId), {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+    console.log('Article updated in Firestore');
+  } catch (error: any) {
+    console.error('Error in updateArticle function:', error);
+    throw new Error(`Failed to update article: ${error.message}`);
+  }
 }; 

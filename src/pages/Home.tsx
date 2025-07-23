@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSchools, getGlobalSchedules } from '../services/firebaseService';
+import { getSchools, getGlobalSchedules, getArticles, Article } from '../services/firebaseService';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
@@ -30,19 +30,23 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
 
   // Load articles from localStorage
   useEffect(() => {
-    const storedArticles = localStorage.getItem('articles');
-    if (storedArticles) {
-      const parsedArticles = JSON.parse(storedArticles);
-      setArticles(parsedArticles);
-      // Set the first article as selected, or default if none exist
-      if (parsedArticles.length > 0) {
-        setSelectedArticle(parsedArticles[0]);
-      } else {
-        setSelectedArticle(defaultArticle);
+    const loadData = async () => {
+      try {
+        const articlesData = await getArticles();
+        setArticles(articlesData);
+        // Set the first article as selected, or default if none exist
+        if (articlesData.length > 0) {
+          setSelectedArticle(articlesData[0]);
+        } else {
+          setSelectedArticle(defaultArticle);
+        }
+      } catch (error) {
+        console.error('Error loading articles:', error);
+        setSelectedArticle(defaultArticle); // Fallback to default if loading fails
       }
-    } else {
-      setSelectedArticle(defaultArticle);
-    }
+    };
+
+    loadData();
   }, []);
 
   // Load schools and upcoming games
