@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSchools, getGlobalSchedules, getArticles, Article } from '../services/firebaseService';
+import { getSchools, getGlobalSchedules, getArticles } from '../services/firebaseService';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
