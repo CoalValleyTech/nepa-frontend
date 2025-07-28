@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSchools, School as BaseSchool, deletePlayerFromRoster } from '../services/firebaseService';
 

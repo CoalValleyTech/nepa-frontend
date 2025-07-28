@@ -89,17 +89,7 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
     }
   }, [players.length]);
 
-  const loadExistingRosters = async () => {
-    if (!selectedSchool || !selectedSport) return;
-    
-    try {
-      const rosters = await getRosterForSchool(selectedSchool, selectedSport);
-      setExistingRosters(rosters);
-    } catch (error: any) {
-      console.error('Error loading existing rosters:', error);
-      setExistingRosters({});
-    }
-  };
+
 
   const handleEditRoster = async (season: string) => {
     if (!existingRosters[season]) return;

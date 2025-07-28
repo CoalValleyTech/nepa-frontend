@@ -323,7 +323,6 @@ const Admin = () => {
                               <ul className="space-y-2">
                                 {Array.isArray((school as any).schedules?.[selectedSport]) && (school as any).schedules[selectedSport].length > 0 ? (
                                   (school as any).schedules[selectedSport].map((game: any, idx: number) => {
-                                    const isEditing = editingGame && editingGame.schoolId === schoolId && editingGame.sport === selectedSport && editingGame.idx === idx;
                                     return (
                                       <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-white rounded shadow p-2">
                                         <>

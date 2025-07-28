@@ -7,7 +7,7 @@ export default function Home() {
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
-  const [liveGames, setLiveGames] = useState<any[]>([]);
+
   const [gamesWithScores, setGamesWithScores] = useState<any[]>([]);
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
@@ -72,11 +72,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
         );
         setUpcomingGames(upcoming.slice(0, 3)); // Show only first 3 upcoming games
 
-        // Load live games
-        const liveGamesData = allGames.filter((game: any) => 
-          game.status && game.status.toUpperCase() === 'LIVE'
-        );
-        setLiveGames(liveGamesData);
+
 
         // Load games with scores (FINAL status or games with score data)
         const gamesWithScoresData = allGames.filter((game: any) => 
