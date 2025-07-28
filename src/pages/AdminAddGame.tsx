@@ -49,6 +49,14 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   const sportIcons: Record<string, string> = {
     football: '/default-football-helmet.png',
     tennis: '/default-tennis-racket.png',
+    'cross-country-boys': '/default-running.png',
+    'cross-country-girls': '/default-running.png',
+    'field-hockey': '/default-field-hockey.png',
+    'golf-boys': '/default-golf.png',
+    'golf-girls': '/default-golf.png',
+    'soccer-boys': '/default-soccer.png',
+    'soccer-girls': '/default-soccer.png',
+    volleyball: '/default-volleyball.png',
   };
 
   useEffect(() => {
@@ -72,7 +80,12 @@ const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
   // Helper to get scoreboard columns by sport
   function getScoreboardColumns(sport: string) {
     if (sport === 'football') return ['1', '2', '3', '4', 'OT'];
-    if (sport === 'soccer') return ['1', '2', 'OT1', 'OT2', 'SO'];
+    if (sport === 'soccer-boys' || sport === 'soccer-girls') return ['1', '2', 'OT1', 'OT2', 'SO'];
+    if (sport === 'volleyball') return ['1', '2', '3', '4', '5'];
+    if (sport === 'field-hockey') return ['1', '2', 'OT1', 'OT2', 'SO'];
+    if (sport === 'tennis') return ['1', '2', '3', '4', '5'];
+    if (sport === 'cross-country-boys' || sport === 'cross-country-girls') return ['Time'];
+    if (sport === 'golf-boys' || sport === 'golf-girls') return ['Hole 1', 'Hole 2', 'Hole 3', 'Hole 4', 'Hole 5', 'Hole 6', 'Hole 7', 'Hole 8', 'Hole 9'];
     // Default: 2 periods
     return ['1', '2'];
   }

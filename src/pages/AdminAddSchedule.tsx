@@ -35,6 +35,14 @@ const AdminAddSchedule: React.FC<AdminAddScheduleProps> = ({ schools, reloadScho
   const sportIcons: Record<string, string> = {
     football: '/default-football-helmet.png',
     tennis: '/default-tennis-racket.png',
+    'cross-country-boys': '/default-running.png',
+    'cross-country-girls': '/default-running.png',
+    'field-hockey': '/default-field-hockey.png',
+    'golf-boys': '/default-golf.png',
+    'golf-girls': '/default-golf.png',
+    'soccer-boys': '/default-soccer.png',
+    'soccer-girls': '/default-soccer.png',
+    volleyball: '/default-volleyball.png',
   };
 
   const selectedSchool = schools.find(s => s.id === selectedSchoolId);

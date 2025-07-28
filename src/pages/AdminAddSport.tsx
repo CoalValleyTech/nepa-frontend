@@ -6,8 +6,16 @@ interface AdminAddSportProps {
 }
 
 const SPORTS = [
-  { value: 'football', label: 'Football' },
-  { value: 'tennis', label: 'Tennis' },
+  { value: 'football', label: 'Football (Boys)' },
+  { value: 'tennis', label: 'Girls Tennis' },
+  { value: 'cross-country-boys', label: 'Cross Country (Boys)' },
+  { value: 'cross-country-girls', label: 'Cross Country (Girls)' },
+  { value: 'field-hockey', label: 'Field Hockey (Girls)' },
+  { value: 'golf-boys', label: 'Golf (Boys)' },
+  { value: 'golf-girls', label: 'Golf (Girls)' },
+  { value: 'soccer-boys', label: 'Soccer (Boys)' },
+  { value: 'soccer-girls', label: 'Soccer (Girls)' },
+  { value: 'volleyball', label: 'Girls Volleyball' },
 ];
 
 const AdminAddSport: React.FC<AdminAddSportProps> = ({ schools }) => {

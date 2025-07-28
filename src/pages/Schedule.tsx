@@ -105,14 +105,14 @@ const Schedule = () => {
                       {/* Home Team */}
                       <div className="flex flex-col items-center lg:items-start gap-4 flex-1 min-w-0 mb-6 lg:mb-0">
                         <div className="flex items-center gap-4">
-                          {game.schoolId && schoolLogoMap[game.schoolId] && (
+                        {game.schoolId && schoolLogoMap[game.schoolId] && (
                             <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                          )}
+                        )}
                           <div className="flex flex-col">
                             <span className="font-bold text-2xl text-primary-600 break-words leading-tight text-center lg:text-left max-w-[150px]">{game.schoolName}</span>
-                            {game.score && game.score.home && (
+                        {game.score && game.score.home && (
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-left">{game.score.home.final ?? '-'}</span>
-                            )}
+                        )}
                           </div>
                         </div>
                       </div>
@@ -131,12 +131,12 @@ const Schedule = () => {
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-right">{game.score.away.final ?? '-'}</span>
                             )}
                           </div>
-                          {(() => {
-                            const opp = schools.find((s: any) => s.name === game.opponent);
-                            return opp && opp.logoUrl ? (
+                        {(() => {
+                          const opp = schools.find((s: any) => s.name === game.opponent);
+                          return opp && opp.logoUrl ? (
                               <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                            ) : null;
-                          })()}
+                          ) : null;
+                        })()}
                         </div>
                       </div>
                     </div>
@@ -184,14 +184,14 @@ const Schedule = () => {
                       {/* Home Team */}
                       <div className="flex flex-col items-center lg:items-start gap-4 flex-1 min-w-0 mb-6 lg:mb-0">
                         <div className="flex items-center gap-4">
-                          {game.schoolId && schoolLogoMap[game.schoolId] && (
+                        {game.schoolId && schoolLogoMap[game.schoolId] && (
                             <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                          )}
+                        )}
                           <div className="flex flex-col">
                             <span className="font-bold text-2xl text-primary-600 break-words leading-tight text-center lg:text-left max-w-[150px]">{game.schoolName}</span>
-                            {game.score && game.score.home && (
+                        {game.score && game.score.home && (
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-left">{game.score.home.final ?? '-'}</span>
-                            )}
+                        )}
                           </div>
                         </div>
                       </div>
@@ -210,12 +210,12 @@ const Schedule = () => {
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-right">{game.score.away.final ?? '-'}</span>
                             )}
                           </div>
-                          {(() => {
-                            const opp = schools.find((s: any) => s.name === game.opponent);
-                            return opp && opp.logoUrl ? (
+                        {(() => {
+                          const opp = schools.find((s: any) => s.name === game.opponent);
+                          return opp && opp.logoUrl ? (
                               <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                            ) : null;
-                          })()}
+                          ) : null;
+                        })()}
                         </div>
                       </div>
                     </div>
@@ -301,14 +301,14 @@ const Schedule = () => {
                       {/* Home Team */}
                       <div className="flex flex-col items-center lg:items-start gap-4 flex-1 min-w-0 mb-6 lg:mb-0">
                         <div className="flex items-center gap-4">
-                          {game.schoolId && schoolLogoMap[game.schoolId] && (
+                        {game.schoolId && schoolLogoMap[game.schoolId] && (
                             <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                          )}
+                        )}
                           <div className="flex flex-col">
                             <span className="font-bold text-2xl text-primary-600 break-words leading-tight text-center lg:text-left max-w-[150px]">{game.schoolName}</span>
-                            {game.score && game.score.home && (
+                        {game.score && game.score.home && (
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-left">{game.score.home.final ?? '-'}</span>
-                            )}
+                        )}
                           </div>
                         </div>
                       </div>
@@ -327,12 +327,12 @@ const Schedule = () => {
                               <span className="bg-green-100 px-4 py-2 rounded font-bold text-xl mt-2 text-center lg:text-right">{game.score.away.final ?? '-'}</span>
                             )}
                           </div>
-                          {(() => {
-                            const opp = schools.find((s: any) => s.name === game.opponent);
-                            return opp && opp.logoUrl ? (
+                        {(() => {
+                          const opp = schools.find((s: any) => s.name === game.opponent);
+                          return opp && opp.logoUrl ? (
                               <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-20 w-20 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                            ) : null;
-                          })()}
+                          ) : null;
+                        })()}
                         </div>
                       </div>
                     </div>

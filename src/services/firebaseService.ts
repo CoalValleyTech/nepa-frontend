@@ -11,7 +11,8 @@ import {
   limit,
   where,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  getDoc
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -50,6 +51,24 @@ export interface Article {
   image?: string;
   createdAt?: any;
   updatedAt?: any;
+}
+
+export interface Player {
+  number: string;
+  name: string;
+  position: string;
+  grade: string;
+  height?: string;
+  weight?: string;
+  stats?: {
+    [key: string]: string | number;
+  };
+}
+
+export interface RosterData {
+  sport: string;
+  season: string;
+  players: Player[];
 }
 
 // Schools Collection
@@ -554,5 +573,97 @@ export const updateArticle = async (articleId: string, updates: Partial<Article>
   } catch (error: any) {
     console.error('Error in updateArticle function:', error);
     throw new Error(`Failed to update article: ${error.message}`);
+  }
+};
+
+// Add roster to a school
+export const addRosterToSchool = async (schoolId: string, rosterData: RosterData): Promise<void> => {
+  try {
+    console.log('Starting addRosterToSchool function for school:', schoolId);
+    console.log('Roster data:', rosterData);
+    
+    const schoolRef = doc(db, SCHOOLS_COLLECTION, schoolId);
+    await updateDoc(schoolRef, {
+      [`rosters.${rosterData.sport}.${rosterData.season}`]: rosterData,
+      updatedAt: serverTimestamp(),
+    });
+    
+    console.log('Roster added successfully to school');
+  } catch (error: any) {
+    console.error('Error in addRosterToSchool function:', error);
+    throw new Error(`Failed to add roster: ${error.message}`);
+  }
+};
+
+// Get roster for a school and sport
+export const getRosterForSchool = async (schoolId: string, sport: string): Promise<any> => {
+  try {
+    console.log('Starting getRosterForSchool function for school:', schoolId, 'sport:', sport);
+    
+    const schoolDoc = await getDoc(doc(db, SCHOOLS_COLLECTION, schoolId));
+    if (!schoolDoc.exists()) {
+      throw new Error('School not found');
+    }
+    
+    const schoolData = schoolDoc.data();
+    const rosters = schoolData.rosters || {};
+    const sportRosters = rosters[sport] || {};
+    
+    console.log('Roster data retrieved:', sportRosters);
+    return sportRosters;
+  } catch (error: any) {
+    console.error('Error in getRosterForSchool function:', error);
+    throw new Error(`Failed to get roster: ${error.message}`);
+  }
+};
+
+// Update roster for a school
+export const updateRosterForSchool = async (schoolId: string, sport: string, season: string, rosterData: RosterData): Promise<void> => {
+  try {
+    console.log('Starting updateRosterForSchool function for school:', schoolId, 'sport:', sport, 'season:', season);
+    console.log('Updated roster data:', rosterData);
+    
+    const schoolRef = doc(db, SCHOOLS_COLLECTION, schoolId);
+    await updateDoc(schoolRef, {
+      [`rosters.${sport}.${season}`]: rosterData,
+      updatedAt: serverTimestamp(),
+    });
+    
+    console.log('Roster updated successfully');
+  } catch (error: any) {
+    console.error('Error in updateRosterForSchool function:', error);
+    throw new Error(`Failed to update roster: ${error.message}`);
+  }
+};
+
+// Delete a player from a roster
+export const deletePlayerFromRoster = async (schoolId: string, sport: string, season: string, playerIndex: number): Promise<void> => {
+  try {
+    console.log('Starting deletePlayerFromRoster function for school:', schoolId, 'sport:', sport, 'season:', season, 'playerIndex:', playerIndex);
+    
+    // Get current roster
+    const currentRoster = await getRosterForSchool(schoolId, sport);
+    const seasonRoster = currentRoster[season];
+    
+    if (!seasonRoster || !seasonRoster.players) {
+      throw new Error('Roster not found');
+    }
+    
+    // Remove the player at the specified index
+    const updatedPlayers = seasonRoster.players.filter((_: any, index: number) => index !== playerIndex);
+    
+    // Update the roster with the player removed
+    const updatedRosterData: RosterData = {
+      sport,
+      season,
+      players: updatedPlayers
+    };
+    
+    await updateRosterForSchool(schoolId, sport, season, updatedRosterData);
+    
+    console.log('Player deleted successfully from roster');
+  } catch (error: any) {
+    console.error('Error in deletePlayerFromRoster function:', error);
+    throw new Error(`Failed to delete player: ${error.message}`);
   }
 }; 

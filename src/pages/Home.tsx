@@ -8,6 +8,7 @@ export default function Home() {
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
   const [liveGames, setLiveGames] = useState<any[]>([]);
+  const [gamesWithScores, setGamesWithScores] = useState<any[]>([]);
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
   
@@ -76,6 +77,13 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
           game.status && game.status.toUpperCase() === 'LIVE'
         );
         setLiveGames(liveGamesData);
+
+        // Load games with scores (FINAL status or games with score data)
+        const gamesWithScoresData = allGames.filter((game: any) => 
+          (game.status && game.status.toUpperCase() === 'FINAL') ||
+          (game.score && (game.score.home?.final || game.score.away?.final))
+        );
+        setGamesWithScores(gamesWithScoresData.slice(0, 5)); // Show up to 5 recent games with scores
 
       } catch (error) {
         console.error('Error loading data:', error);
@@ -223,13 +231,17 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
                   <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores</h2>
                   <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
-                    {liveGames.length === 0 ? (
-                      <p>No live games currently.</p>
+                    {gamesWithScores.length === 0 ? (
+                      <p>No recent scores available.</p>
                     ) : (
-                      liveGames.map((game, index) => {
+                      gamesWithScores.map((game, index) => {
                         // Get team names
                         const homeTeamName = game.schoolName || 'Home Team';
                         const awayTeamName = game.opponent || 'Away Team';
+                        
+                        // Get scores
+                        const homeScore = game.score?.home?.final || 0;
+                        const awayScore = game.score?.away?.final || 0;
                         
                         return (
                           <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
@@ -239,7 +251,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                               <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
                             </div>
                             
-                            {/* Teams Section */}
+                            {/* Teams Section with Scores */}
                             <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
                               <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
                                 {game.schoolId && schoolLogoMap[game.schoolId] && (
@@ -248,7 +260,18 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                                 <span className="truncate max-w-[80px]">{homeTeamName}</span>
                               </div>
                               <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
-                                <span className="text-xs text-primary-400">VS</span>
+                                <div className="text-2xl font-bold text-primary-700 mb-1">
+                                  {homeScore} - {awayScore}
+                                </div>
+                                {game.status && (
+                                  <div className={`text-xs px-2 py-1 rounded-full ${
+                                    game.status === 'LIVE' ? 'bg-red-100 text-red-700' :
+                                    game.status === 'FINAL' ? 'bg-green-100 text-green-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                  }`}>
+                                  {game.status}
+                                </div>
+                                )}
                               </div>
                               <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
                                 <span className="truncate max-w-[80px] text-right">{awayTeamName}</span>
@@ -261,7 +284,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                               </div>
                             </div>
                             
-                            {/* Play Button for Livestream */}
+                            {/* Play Button for Livestream (if available) */}
                             {game.url && (
                               <div className="mt-3 flex justify-center">
                                 <button

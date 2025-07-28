@@ -6,6 +6,7 @@ import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
+import AdminAddRoster from './AdminAddRoster';
 
 const allowedAdmins = ['batesnate958@gmail.com', 'mnovak03@outlook.com'];
 
@@ -14,11 +15,13 @@ const Admin = () => {
   const [schoolsLoading, setSchoolsLoading] = useState(false);
   const navigate = useNavigate();
   const [schools, setSchools] = useState<School[]>([]);
-  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle'>('addSchool');
+  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster'>('addSchool');
   const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
   const [expandedSport, setExpandedSport] = useState<{ [schoolId: string]: string | null }>({});
   const [editingGame, setEditingGame] = useState<{ schoolId: string; sport: string; idx: number } | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [scoreInputs, setScoreInputs] = useState<any>({});
+  const [showEditModal, setShowEditModal] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [articleForm, setArticleForm] = useState({ 
     title: '', 
@@ -146,14 +149,54 @@ const Admin = () => {
   const handleEditClick = (schoolId: string, sport: string, idx: number, game: any) => {
     setEditingGame({ schoolId, sport, idx });
     setEditForm({ ...game });
+    setScoreInputs(game.score || {});
+    setShowEditModal(true);
   };
+
   const handleEditChange = (field: string, value: string) => {
     setEditForm((prev: any) => ({ ...prev, [field]: value }));
   };
+  
+  // Helper to get scoreboard columns by sport
+  const getScoreboardColumns = (sport: string) => {
+    if (sport === 'football') return ['1', '2', '3', '4', 'OT'];
+    if (sport === 'soccer-boys' || sport === 'soccer-girls') return ['1', '2', 'OT1', 'OT2', 'SO'];
+    if (sport === 'volleyball') return ['1', '2', '3', '4', '5'];
+    if (sport === 'field-hockey') return ['1', '2', 'OT1', 'OT2', 'SO'];
+    if (sport === 'tennis') return ['1', '2', '3', '4', '5'];
+    if (sport === 'cross-country-boys' || sport === 'cross-country-girls') return ['Time'];
+    if (sport === 'golf-boys' || sport === 'golf-girls') return ['Hole 1', 'Hole 2', 'Hole 3', 'Hole 4', 'Hole 5', 'Hole 6', 'Hole 7', 'Hole 8', 'Hole 9'];
+    // Default: 2 periods
+    return ['1', '2'];
+  };
+
+  // Handle score input change
+  const handleScoreInput = (team: 'home' | 'away', col: string, value: string) => {
+    setScoreInputs((prev: any) => ({
+      ...prev,
+      [team]: {
+        ...prev[team],
+        [col]: value,
+      },
+    }));
+  };
+
   const handleEditSave = async (schoolId: string, sport: string, oldGame: any) => {
     // For now, just update the entry in Firestore and close the form
-    await updateSchoolScheduleEntry(schoolId, sport, oldGame, editForm);
+    const updatedEntry = {
+      ...editForm,
+      score: scoreInputs
+    };
+    await updateSchoolScheduleEntry(schoolId, sport, oldGame, updatedEntry);
     setEditingGame(null);
+    setScoreInputs({});
+    setShowEditModal(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingGame(null);
+    setScoreInputs({});
+    setShowEditModal(false);
   };
   const handleDeleteGame = async (schoolId: string, sport: string, game: any) => {
     if (!window.confirm('Are you sure you want to delete this game?')) return;
@@ -212,6 +255,12 @@ const Admin = () => {
             onClick={() => setActiveTab('addArticle')}
           >
             Add Article
+          </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'addRoster' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('addRoster')}
+          >
+            Add Roster
           </button>
         </nav>
       </aside>
@@ -277,32 +326,34 @@ const Admin = () => {
                                     const isEditing = editingGame && editingGame.schoolId === schoolId && editingGame.sport === selectedSport && editingGame.idx === idx;
                                     return (
                                       <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-white rounded shadow p-2">
-                                        {isEditing ? (
-                                          <div className="flex flex-col gap-2 w-full">
-                                            <input type="datetime-local" value={editForm.time || ''} onChange={e => handleEditChange('time', e.target.value)} className="border rounded px-2 py-1" />
-                                            <input type="text" value={editForm.location || ''} onChange={e => handleEditChange('location', e.target.value)} placeholder="Location" className="border rounded px-2 py-1" />
-                                            <input type="text" value={editForm.opponent || ''} onChange={e => handleEditChange('opponent', e.target.value)} placeholder="Opponent" className="border rounded px-2 py-1" />
-                                            <input type="text" value={editForm.status || ''} onChange={e => handleEditChange('status', e.target.value)} placeholder="Status" className="border rounded px-2 py-1" />
-                                            <div className="flex gap-2 mt-2">
-                                              <button className="bg-green-600 text-white px-3 py-1 rounded" onClick={() => handleEditSave(schoolId, selectedSport, game)}>Save</button>
-                                              <button className="bg-gray-300 text-gray-700 px-3 py-1 rounded" onClick={() => setEditingGame(null)}>Cancel</button>
+                                        <>
+                                          <span className="font-bold text-primary-700">{game.time ? new Date(game.time).toLocaleString() : ''}</span>
+                                          <span className="text-primary-600">{game.location}</span>
+                                          <span className="text-primary-500">vs {game.opponent}</span>
+                                          {game.status && <span className="text-xs px-2 py-1 rounded bg-primary-100 text-primary-700">{game.status}</span>}
+                                          
+                                          {/* Score Display */}
+                                          {game.score && (game.score.home?.final || game.score.away?.final) && (
+                                            <div className="ml-auto flex flex-col items-end">
+                                              <span className="font-bold text-green-700 text-lg">
+                                                {game.score.home?.final ?? '-'} - {game.score.away?.final ?? '-'}
+                                              </span>
+                                              {/* Period Scores */}
+                                              <div className="flex gap-1 text-xs text-gray-600">
+                                                {getScoreboardColumns(selectedSport).map(col => (
+                                                  <span key={col} className="px-1">
+                                                    {game.score.home?.[col] || '-'}/{game.score.away?.[col] || '-'}
+                                                  </span>
+                                                ))}
+                                              </div>
                                             </div>
+                                          )}
+                                          
+                                          <div className="flex gap-2 mt-2">
+                                            <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handleEditClick(schoolId, selectedSport, idx, game)}>Edit</button>
+                                            <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteGame(schoolId, selectedSport, game)}>Delete</button>
                                           </div>
-                                        ) : (
-                                          <>
-                                            <span className="font-bold text-primary-700">{game.time ? new Date(game.time).toLocaleString() : ''}</span>
-                                            <span className="text-primary-600">{game.location}</span>
-                                            <span className="text-primary-500">vs {game.opponent}</span>
-                                            {game.status && <span className="text-xs px-2 py-1 rounded bg-primary-100 text-primary-700">{game.status}</span>}
-                                            {game.score && (game.score.home?.final || game.score.away?.final) && (
-                                              <span className="ml-auto font-bold text-green-700">{game.score.home?.final ?? '-'} - {game.score.away?.final ?? '-'}</span>
-                                            )}
-                                            <div className="flex gap-2 mt-2">
-                                              <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handleEditClick(schoolId, selectedSport, idx, game)}>Edit</button>
-                                              <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteGame(schoolId, selectedSport, game)}>Delete</button>
-                                            </div>
-                                          </>
-                                        )}
+                                        </>
                                       </li>
                                     );
                                   })
@@ -497,8 +548,171 @@ const Admin = () => {
               )}
             </div>
           )}
+          {activeTab === 'addRoster' && (
+            <AdminAddRoster schools={schools} />
+          )}
         </div>
       </main>
+
+      {/* Edit Game Modal */}
+      {showEditModal && editingGame && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-2xl font-bold text-primary-700">Edit Game</h2>
+                <button
+                  onClick={handleCancelEdit}
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none"
+                  aria-label="Close modal"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Basic Game Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Date & Time</label>
+                    <input 
+                      type="datetime-local" 
+                      value={editForm.time || ''} 
+                      onChange={e => handleEditChange('time', e.target.value)} 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Location</label>
+                    <input 
+                      type="text" 
+                      value={editForm.location || ''} 
+                      onChange={e => handleEditChange('location', e.target.value)} 
+                      placeholder="Location" 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Opponent</label>
+                    <input 
+                      type="text" 
+                      value={editForm.opponent || ''} 
+                      onChange={e => handleEditChange('opponent', e.target.value)} 
+                      placeholder="Opponent" 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Status</label>
+                    <select 
+                      value={editForm.status || ''} 
+                      onChange={e => handleEditChange('status', e.target.value)} 
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="SCHEDULED">Scheduled</option>
+                      <option value="LIVE">Live</option>
+                      <option value="FINAL">Final</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Score Input Section */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-primary-700 mb-4">Score</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Home Team Score */}
+                    <div>
+                      <div className="text-sm font-medium text-primary-600 mb-2">Home Team</div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {getScoreboardColumns(editingGame.sport).map(col => (
+                            <div key={`home-${col}`} className="flex flex-col items-center">
+                              <label className="text-xs text-gray-600 mb-1">{col}</label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                value={scoreInputs.home?.[col] || ''}
+                                onChange={e => handleScoreInput('home', col, e.target.value)}
+                                className="w-12 h-10 text-center border rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-green-700">Final:</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={scoreInputs.home?.final || ''}
+                            onChange={e => handleScoreInput('home', 'final', e.target.value)}
+                            className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Away Team Score */}
+                    <div>
+                      <div className="text-sm font-medium text-primary-600 mb-2">Away Team</div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {getScoreboardColumns(editingGame.sport).map(col => (
+                            <div key={`away-${col}`} className="flex flex-col items-center">
+                              <label className="text-xs text-gray-600 mb-1">{col}</label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                value={scoreInputs.away?.[col] || ''}
+                                onChange={e => handleScoreInput('away', col, e.target.value)}
+                                className="w-12 h-10 text-center border rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-green-700">Final:</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={scoreInputs.away?.final || ''}
+                            onChange={e => handleScoreInput('away', 'final', e.target.value)}
+                            className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <button 
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200" 
+                    onClick={() => handleEditSave(editingGame.schoolId, editingGame.sport, editForm)}
+                  >
+                    Save Changes
+                  </button>
+                  <button 
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-semibold transition-colors duration-200" 
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
