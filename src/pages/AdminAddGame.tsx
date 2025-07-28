@@ -10,6 +10,8 @@ interface AdminAddGameProps {
 const SPORTS = [
   { value: 'football', label: 'Football' },
   { value: 'tennis', label: 'Tennis' },
+  { value: 'golf-boys', label: 'Golf (Boys)' },
+  { value: 'golf-girls', label: 'Golf (Girls)' },
 ];
 
 const AdminAddGame: React.FC<AdminAddGameProps> = ({ schools }) => {
