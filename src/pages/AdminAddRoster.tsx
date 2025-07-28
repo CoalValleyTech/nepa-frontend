@@ -80,6 +80,10 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
 
   const removePlayer = (index: number) => {
     setPlayers(players.filter((_, i) => i !== index));
+    setError(''); // Clear any validation errors
+    setMessage('Player deleted successfully'); // Show success message
+    // Clear the success message after 2 seconds
+    setTimeout(() => setMessage(''), 2000);
   };
 
   // Ensure there's always at least one player slot
@@ -119,14 +123,11 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
       return;
     }
 
-    // Only validate players that have some data filled in
-    const playersWithData = players.filter(player => player.number || player.name || player.position || player.grade);
-    if (playersWithData.some(player => !player.number || !player.name || !player.position || !player.grade)) {
-      setError('Please fill out all fields for each player.');
-      return;
-    }
+    // Only include players that have all fields filled in
+    const playersWithData = players.filter(player => player.number && player.name && player.position && player.grade);
 
     // Allow empty roster (no players) - don't require at least one player
+    // When editing, allow empty roster to be saved
     if (playersWithData.length === 0) {
       // Create an empty roster
       const rosterData: RosterData = {
@@ -158,7 +159,7 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
       const rosterData: RosterData = {
         sport: selectedSport,
         season,
-        players: playersWithData.filter(player => player.number && player.name && player.position && player.grade)
+        players: playersWithData
       };
 
       if (isEditing) {
@@ -291,7 +292,10 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => removePlayer(index)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          removePlayer(index);
+                        }}
                         className="text-red-500 hover:text-red-700 text-sm font-medium px-2 py-1 rounded border border-red-200 hover:bg-red-50"
                         disabled={isSubmitting}
                       >
@@ -309,7 +313,6 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                         onChange={e => handlePlayerChange(index, 'number', e.target.value)}
                         placeholder="e.g., 12"
                         className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        required
                         disabled={isSubmitting}
                       />
                     </div>
@@ -322,7 +325,6 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                         onChange={e => handlePlayerChange(index, 'name', e.target.value)}
                         placeholder="Full name"
                         className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        required
                         disabled={isSubmitting}
                       />
                     </div>
@@ -333,7 +335,6 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                         value={player.position}
                         onChange={e => handlePlayerChange(index, 'position', e.target.value)}
                         className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        required
                         disabled={isSubmitting}
                       >
                         <option value="">Select position</option>
@@ -349,7 +350,6 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                         value={player.grade}
                         onChange={e => handlePlayerChange(index, 'grade', e.target.value)}
                         className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        required
                         disabled={isSubmitting}
                       >
                         <option value="">Select grade</option>

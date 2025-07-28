@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getSchools, School as BaseSchool, deletePlayerFromRoster } from '../services/firebaseService';
+import { getSchools, School as BaseSchool } from '../services/firebaseService';
 
 // Extend School type to include schedules
 interface ScheduleEntry {
@@ -96,21 +96,7 @@ const SchoolPage = () => {
     }));
   };
 
-  const deletePlayer = async (sport: string, season: string, playerIndex: number) => {
-    if (!school) return;
-    
-    try {
-      await deletePlayerFromRoster(school.id!, sport, season, playerIndex);
-      // Reload the school data to reflect the change
-      const updatedSchool = await getSchools();
-      const currentSchool = updatedSchool.find((s: any) => s.id === school.id);
-      if (currentSchool) {
-        setSchool(currentSchool);
-      }
-    } catch (error: any) {
-      console.error('Error deleting player:', error);
-    }
-  };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -323,16 +309,15 @@ const SchoolPage = () => {
                             <h4 className="text-lg font-semibold text-blue-800 mb-3">{season} Season</h4>
                             {rosterData.players && rosterData.players.length > 0 ? (
                               <div className="bg-white rounded-lg shadow-sm border border-blue-200 overflow-hidden">
-                                <div className="grid grid-cols-5 gap-0 border-b border-blue-200 bg-blue-100">
+                                <div className="grid grid-cols-4 gap-0 border-b border-blue-200 bg-blue-100">
                                   <div className="px-4 py-3 font-semibold text-blue-800 text-sm">#</div>
                                   <div className="px-4 py-3 font-semibold text-blue-800 text-sm">Name</div>
                                   <div className="px-4 py-3 font-semibold text-blue-800 text-sm">Position</div>
                                   <div className="px-4 py-3 font-semibold text-blue-800 text-sm">Grade</div>
-                                  <div className="px-4 py-3 font-semibold text-blue-800 text-sm">Actions</div>
                                 </div>
                                 <div className="divide-y divide-blue-100">
                                   {rosterData.players.map((player: any, idx: number) => (
-                                    <div key={idx} className="grid grid-cols-5 gap-0 hover:bg-blue-50">
+                                    <div key={idx} className="grid grid-cols-4 gap-0 hover:bg-blue-50">
                                       <div className="px-4 py-3 font-bold text-blue-700 text-sm">
                                         {player.number}
                                       </div>
@@ -344,15 +329,6 @@ const SchoolPage = () => {
                                       </div>
                                       <div className="px-4 py-3 text-blue-600 text-sm">
                                         {player.grade}
-                                      </div>
-                                      <div className="px-4 py-3 text-blue-600 text-sm">
-                                        <button
-                                          onClick={() => deletePlayer(selectedSport!, season, idx)}
-                                          className="text-red-500 hover:text-red-700 text-xs font-medium px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors"
-                                          title="Delete Player"
-                                        >
-                                          Delete
-                                        </button>
                                       </div>
                                     </div>
                                   ))}
