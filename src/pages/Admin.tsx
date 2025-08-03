@@ -165,20 +165,7 @@ const Admin = () => {
     }
   };
 
-  const handleEditClick = (schoolId: string, sport: string, _idx: number, game: any) => {
-    setEditingGame({ ...game, schoolId, sport });
-    setEditForm({
-      time: game.time || '',
-      location: game.location || '',
-      opponent: game.opponent || '',
-      status: game.status || ''
-    });
-    setScoreInputs({
-      home: game.score?.home || {},
-      away: game.score?.away || {}
-    });
-    setShowEditModal(true);
-  };
+
 
   const handleEditChange = (field: string, value: string) => {
     setEditForm((prev: any) => ({ ...prev, [field]: value }));
@@ -250,30 +237,7 @@ const Admin = () => {
     setScoreInputs({ home: {}, away: {} });
   };
 
-  const _handleDeleteGame = async (schoolId: string, sport: string, game: any) => {
-    if (window.confirm('Are you sure you want to delete this game?')) {
-      try {
-        const updatedSchools = schools.map(school => {
-          if (school.id === schoolId) {
-            const schoolWithSchedules = school as any;
-            const updatedSchedules = schoolWithSchedules.schedules?.map((schedule: any) => {
-              if (schedule.sport === sport) {
-                const updatedGames = schedule.games?.filter((g: any) => g.id !== game.id);
-                return { ...schedule, games: updatedGames };
-              }
-              return schedule;
-            });
-            return { ...school, schedules: updatedSchedules };
-          }
-          return school;
-        });
-        setSchools(updatedSchools);
-      } catch (error) {
-        console.error('Error deleting game:', error);
-        alert('Error deleting game');
-      }
-    }
-  };
+
 
   useEffect(() => {
     loadSchools();

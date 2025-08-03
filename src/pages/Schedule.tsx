@@ -10,7 +10,7 @@ const Schedule = () => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
   });
-  const [availableSports, setAvailableSports] = useState<string[]>([]);
+  const [_availableSports, setAvailableSports] = useState<string[]>([]);
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
   const [selectedSchool, setSelectedSchool] = useState('');
