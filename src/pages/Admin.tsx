@@ -1,129 +1,148 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { School, getSchools, updateSchoolScheduleEntry, deleteScheduleEntry, addArticle, getArticles, deleteArticle, Article } from '../services/firebaseService';
+import React, { useState, useEffect } from 'react';
 import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
 import AdminAddRoster from './AdminAddRoster';
-
-const allowedAdmins = ['batesnate958@gmail.com', 'mnovak03@outlook.com'];
+import { getSchools, getArticles, addArticle, deleteArticle, School, Article } from '../services/firebaseService';
 
 const Admin = () => {
-  const [loading, setLoading] = useState(true);
-  const [schoolsLoading, setSchoolsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster' | 'addStats'>('addSchool');
   const [schools, setSchools] = useState<School[]>([]);
-  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster'>('addSchool');
-  const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
-  const [expandedSport, setExpandedSport] = useState<{ [schoolId: string]: string | null }>({});
-  const [editingGame, setEditingGame] = useState<{ schoolId: string; sport: string; idx: number } | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
-  const [scoreInputs, setScoreInputs] = useState<any>({});
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [schoolsLoading, setSchoolsLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [articleForm, setArticleForm] = useState({ 
-    title: '', 
-    excerpt: '', 
-    content: '', 
-    date: '', 
-    category: ''
+  const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
+  const [expandedSport, setExpandedSport] = useState<{ [key: string]: string }>({});
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingGame, setEditingGame] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [scoreInputs, setScoreInputs] = useState<any>({ home: {}, away: {} });
+
+  // Add Stats states
+  const [selectedSport, setSelectedSport] = useState<string>('');
+  const [selectedDivision, setSelectedDivision] = useState<string>('');
+
+  // Article form state
+  const [articleForm, setArticleForm] = useState({
+    title: '',
+    content: '',
+    excerpt: '',
+    category: '',
+    imageUrl: ''
   });
-  const [articleImage, setArticleImage] = useState<string | null>(null);
-  const handleArticleChange = (field: string, value: string) => setArticleForm(prev => ({ ...prev, [field]: value }));
+
+  const sportDivisions = {
+    'football': ['division-1', 'division-2', 'division-3'],
+    'golf': ['division-1', 'division-2'],
+    'boys-soccer': ['division-1', 'division-2', 'division-3'],
+    'girls-soccer': ['division-1', 'division-2'],
+    'boys-cross-country': ['cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5', 'cluster-6', 'cluster-7', 'cluster-8'],
+    'girls-cross-country': ['cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5', 'cluster-6', 'cluster-7', 'cluster-8']
+  };
+
+  const teamData = {
+    'football': {
+      'division-1': ['Abington Heights Comets', 'Delaware Valley Warriors', 'North Pocono Trojans', 'Scranton Knights', 'Scranton Prep Cavaliers', 'Valley View Cougars', 'Wallenpaupack Buckhorns'],
+      'division-2': ['Dunmore Bucks', 'Honesdale Hornets', 'Lakeland Chiefs', 'Mid Valley Spartans', 'West Scranton Invaders', 'Western Wayne Wildcats'],
+      'division-3': ['Carbondale Area Chargers', 'Holy Cross Crusaders', 'Lackawanna Trail Lions', 'Old Forge Blue Devils', 'Riverside Vikings', 'Susquehanna Sabers']
+    },
+    'golf': {
+      'division-1': ['Scranton Prep', 'Abington Heights', 'Honesdale', 'North Pocono', 'Delaware Valley', 'Wallenpaupack'],
+      'division-2': ['Lackawanna Trail', 'Riverside', 'Lakeland', 'Mid Valley', 'Dunmore', 'Western Wayne', 'Blue Ridge', 'Old Forge', 'Montrose', 'Holy Cross', 'Mt. View', 'West Scranton', 'Scranton', 'Elk Lake', 'Forest City', 'Carbondale']
+    },
+    'boys-soccer': {
+      'division-1': ['Abington Heights', 'Scranton Prep', 'North Pocono', 'Delaware Valley', 'Valley View', 'Honesdale', 'Scranton', 'Wallenpaupack'],
+      'division-2': ['Dunmore', 'Lakeland', 'West Scranton', 'Mt. View', 'Western Wayne', 'Gregory the Great', 'Mid Valley'],
+      'division-3': ['Old Forge', 'Riverside', 'Elk Lake', 'Blue Ridge', 'Holy Cross', 'Montrose', 'Forest City', 'Carbondale']
+    },
+    'girls-soccer': {
+      'division-1': ['Abington Heights', 'Valley View', 'Mid Valley', 'Scranton Prep', 'Delaware Valley', 'North Pocono', 'Wallenpaupack'],
+      'division-2': ['Honesdale', 'Mt. View', 'Montrose', 'Western Wayne', 'Elk Lake', 'Old Forge', 'Lakeland', 'Dunmore', 'Holy Cross', 'Forest City', 'Carbondale', 'Scranton', 'West Scranton']
+    },
+    'boys-cross-country': {
+      'cluster-1': ['Abington Heights', 'North Pocono', 'Valley View'],
+      'cluster-2': ['Susquehanna', 'Mt. View', 'Forest City'],
+      'cluster-3': ['Montrose', 'Blue Ridge', 'Elk Lake'],
+      'cluster-4': ['Delaware Valley', 'Wallenpaupack', 'Honesdale'],
+      'cluster-5': ['Scranton Prep', 'Holy Cross', 'Carbondale'],
+      'cluster-6': ['Scranton', 'West Scranton', 'Mid Valley'],
+      'cluster-7': ['Lakeland', 'Lack. Trail', 'Western Wayne'],
+      'cluster-8': ['Dunmore', 'Riverside', 'Old Forge']
+    },
+    'girls-cross-country': {
+      'cluster-1': ['Abington Heights', 'North Pocono', 'Valley View'],
+      'cluster-2': ['Susquehanna', 'Mt. View', 'Forest City'],
+      'cluster-3': ['Montrose', 'Blue Ridge', 'Elk Lake'],
+      'cluster-4': ['Delaware Valley', 'Wallenpaupack', 'Honesdale'],
+      'cluster-5': ['Scranton Prep', 'Holy Cross', 'Carbondale'],
+      'cluster-6': ['Scranton', 'West Scranton', 'Mid Valley'],
+      'cluster-7': ['Lakeland', 'Lack. Trail', 'Western Wayne'],
+      'cluster-8': ['Dunmore', 'Riverside', 'Old Forge']
+    }
+  };
+
+  const handleArticleChange = (field: string, value: string) => setArticleForm((prev: any) => ({ ...prev, [field]: value }));
+  
   const handleArticleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setArticleImage(reader.result as string);
+      reader.onload = (e) => {
+        setArticleForm((prev: any) => ({ ...prev, imageUrl: e.target?.result as string }));
       };
       reader.readAsDataURL(file);
-    } else {
-      setArticleImage(null);
     }
   };
+
   const handleAddArticle = async () => {
-    console.log('handleAddArticle called');
-    console.log('articleForm:', articleForm);
-    console.log('articleImage:', articleImage);
-    
-    if (!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category) {
-      console.log('Validation failed:');
-      console.log('title:', articleForm.title);
-      console.log('excerpt:', articleForm.excerpt);
-      console.log('date:', articleForm.date);
-      console.log('category:', articleForm.category);
+    if (!articleForm.title || !articleForm.content || !articleForm.excerpt || !articleForm.category) {
+      alert('Please fill in all required fields');
       return;
     }
-    
+
     try {
-      console.log('Adding article to Firebase...');
-      
-      // Create article data without undefined fields
-      const articleData: any = {
-        title: articleForm.title,
-        excerpt: articleForm.excerpt,
-        content: articleForm.content,
-        date: articleForm.date,
-        category: articleForm.category
+      const newArticle = {
+        ...articleForm,
+        date: new Date().toLocaleDateString()
       };
-      
-      // Only add image if it exists
-      if (articleImage) {
-        articleData.image = articleImage;
-      }
-      
-      await addArticle(articleData);
-      console.log('Article added successfully');
-      setArticleForm({ title: '', excerpt: '', content: '', date: '', category: '' });
-      setArticleImage(null);
+      await addArticle(newArticle);
+      setArticleForm({ title: '', content: '', excerpt: '', category: '', imageUrl: '' });
       loadArticles();
     } catch (error) {
       console.error('Error adding article:', error);
+      alert('Error adding article');
     }
-  };
-  const handleDeleteArticle = async (idx: number) => {
-    const articleToDelete = articles[idx];
-    if (articleToDelete.id) {
-      await deleteArticle(articleToDelete.id);
-      setArticles(articles.filter((_, i) => i !== idx));
-    }
-  };
-  const [archivedArticles, setArchivedArticles] = useState<Article[]>(() => {
-    const stored = localStorage.getItem('archivedArticles');
-    return stored ? JSON.parse(stored) : [];
-  });
-  const handleArchiveArticle = (idx: number) => {
-    const articleToArchive = articles[idx];
-    const newArticles = articles.filter((_, i) => i !== idx);
-    const newArchived = [articleToArchive, ...archivedArticles];
-    setArticles(newArticles);
-    setArchivedArticles(newArchived);
-    localStorage.setItem('articles', JSON.stringify(newArticles));
-    localStorage.setItem('archivedArticles', JSON.stringify(newArchived));
-  };
-  const handleDeleteArchivedArticle = (idx: number) => {
-    const newArchived = archivedArticles.filter((_, i) => i !== idx);
-    setArchivedArticles(newArchived);
-    localStorage.setItem('archivedArticles', JSON.stringify(newArchived));
   };
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (!user) {
-        navigate('/login');
-      } else if (!allowedAdmins.includes(user.email || '')) {
-        navigate('/login');
-      } else {
-        setLoading(false);
-        loadSchools();
-        loadArticles();
+  const handleDeleteArticle = async (idx: number) => {
+    if (window.confirm('Are you sure you want to delete this article?')) {
+      try {
+        const article = articles[idx];
+        if (article.id) {
+          await deleteArticle(article.id);
+          loadArticles();
+        }
+      } catch (error) {
+        console.error('Error deleting article:', error);
+        alert('Error deleting article');
       }
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+    }
+  };
+
+  const handleArchiveArticle = (idx: number) => {
+    const updatedArticles = [...articles];
+    (updatedArticles[idx] as any).archived = true;
+    setArticles(updatedArticles);
+  };
+
+  const handleDeleteArchivedArticle = (idx: number) => {
+    const archivedArticles = articles.filter((article: any) => article.archived);
+    const article = archivedArticles[idx];
+    if (window.confirm('Are you sure you want to permanently delete this archived article?')) {
+      const updatedArticles = articles.filter(a => a.id !== article.id);
+      setArticles(updatedArticles);
+    }
+  };
 
   const loadSchools = async () => {
     try {
@@ -131,7 +150,7 @@ const Admin = () => {
       const schoolsData = await getSchools();
       setSchools(schoolsData);
     } catch (error) {
-      // Optionally handle error
+      console.error('Error loading schools:', error);
     } finally {
       setSchoolsLoading(false);
     }
@@ -142,78 +161,124 @@ const Admin = () => {
       const articlesData = await getArticles();
       setArticles(articlesData);
     } catch (error) {
-      console.error("Error loading articles:", error);
+      console.error('Error loading articles:', error);
     }
   };
 
-  const handleEditClick = (schoolId: string, sport: string, idx: number, game: any) => {
-    setEditingGame({ schoolId, sport, idx });
-    setEditForm({ ...game });
-    setScoreInputs(game.score || {});
+  const handleEditClick = (schoolId: string, sport: string, _idx: number, game: any) => {
+    setEditingGame({ ...game, schoolId, sport });
+    setEditForm({
+      time: game.time || '',
+      location: game.location || '',
+      opponent: game.opponent || '',
+      status: game.status || ''
+    });
+    setScoreInputs({
+      home: game.score?.home || {},
+      away: game.score?.away || {}
+    });
     setShowEditModal(true);
   };
 
   const handleEditChange = (field: string, value: string) => {
     setEditForm((prev: any) => ({ ...prev, [field]: value }));
   };
-  
-  // Helper to get scoreboard columns by sport
+
   const getScoreboardColumns = (sport: string) => {
-    if (sport === 'football') return ['1', '2', '3', '4', 'OT'];
-    if (sport === 'soccer-boys' || sport === 'soccer-girls') return ['1', '2', 'OT1', 'OT2', 'SO'];
-    if (sport === 'volleyball') return ['1', '2', '3', '4', '5'];
-    if (sport === 'field-hockey') return ['1', '2', 'OT1', 'OT2', 'SO'];
-    if (sport === 'tennis') return ['1', '2', '3', '4', '5'];
-    if (sport === 'cross-country-boys' || sport === 'cross-country-girls') return ['Time'];
-    if (sport === 'golf-boys' || sport === 'golf-girls') return ['Hole 1', 'Hole 2', 'Hole 3', 'Hole 4', 'Hole 5', 'Hole 6', 'Hole 7', 'Hole 8', 'Hole 9'];
-    // Default: 2 periods
-    return ['1', '2'];
+    switch (sport) {
+      case 'football':
+        return ['Q1', 'Q2', 'Q3', 'Q4'];
+      case 'tennis':
+        return ['Set1', 'Set2', 'Set3'];
+      case 'golf-boys':
+      case 'golf-girls':
+        return ['Hole1', 'Hole2', 'Hole3', 'Hole4', 'Hole5', 'Hole6', 'Hole7', 'Hole8', 'Hole9'];
+      default:
+        return ['Q1', 'Q2', 'Q3', 'Q4'];
+    }
   };
 
-  // Handle score input change
   const handleScoreInput = (team: 'home' | 'away', col: string, value: string) => {
     setScoreInputs((prev: any) => ({
       ...prev,
       [team]: {
         ...prev[team],
-        [col]: value,
-      },
+        [col]: value
+      }
     }));
   };
 
   const handleEditSave = async (schoolId: string, sport: string, oldGame: any) => {
-    // For now, just update the entry in Firestore and close the form
-    const updatedEntry = {
-      ...editForm,
-      score: scoreInputs
-    };
-    await updateSchoolScheduleEntry(schoolId, sport, oldGame, updatedEntry);
-    setEditingGame(null);
-    setScoreInputs({});
-    setShowEditModal(false);
+    try {
+      const updatedGame = {
+        ...oldGame,
+        ...editForm,
+        score: scoreInputs
+      };
+      
+      // Update the game in the schedule
+      const updatedSchools = schools.map(school => {
+        if (school.id === schoolId) {
+          const schoolWithSchedules = school as any;
+          const updatedSchedules = schoolWithSchedules.schedules?.map((schedule: any) => {
+            if (schedule.sport === sport) {
+              const updatedGames = schedule.games?.map((game: any) => 
+                game.id === oldGame.id ? updatedGame : game
+              );
+              return { ...schedule, games: updatedGames };
+            }
+            return schedule;
+          });
+          return { ...school, schedules: updatedSchedules };
+        }
+        return school;
+      });
+      
+      setSchools(updatedSchools);
+      setShowEditModal(false);
+      setEditingGame(null);
+    } catch (error) {
+      console.error('Error saving game:', error);
+      alert('Error saving game');
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditingGame(null);
-    setScoreInputs({});
     setShowEditModal(false);
-  };
-  const handleDeleteGame = async (schoolId: string, sport: string, game: any) => {
-    if (!window.confirm('Are you sure you want to delete this game?')) return;
-    await deleteScheduleEntry(schoolId, sport, game);
-    if (typeof loadSchools === 'function') loadSchools();
+    setEditingGame(null);
+    setEditForm({});
+    setScoreInputs({ home: {}, away: {} });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-xl">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          Loading Admin Dashboard...
-        </div>
-      </div>
-    );
-  }
+  const _handleDeleteGame = async (schoolId: string, sport: string, game: any) => {
+    if (window.confirm('Are you sure you want to delete this game?')) {
+      try {
+        const updatedSchools = schools.map(school => {
+          if (school.id === schoolId) {
+            const schoolWithSchedules = school as any;
+            const updatedSchedules = schoolWithSchedules.schedules?.map((schedule: any) => {
+              if (schedule.sport === sport) {
+                const updatedGames = schedule.games?.filter((g: any) => g.id !== game.id);
+                return { ...schedule, games: updatedGames };
+              }
+              return schedule;
+            });
+            return { ...school, schedules: updatedSchedules };
+          }
+          return school;
+        });
+        setSchools(updatedSchools);
+      } catch (error) {
+        console.error('Error deleting game:', error);
+        alert('Error deleting game');
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadSchools();
+    loadArticles();
+  }, []);
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col md:flex-row">
@@ -262,8 +327,15 @@ const Admin = () => {
           >
             Add Roster
           </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'addStats' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('addStats')}
+          >
+            Add Stats
+          </button>
         </nav>
       </aside>
+
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center py-8 px-4">
         <h1 className="text-3xl font-bold text-primary-700 mb-8">Admin Dashboard</h1>
@@ -310,56 +382,29 @@ const Admin = () => {
                             {(school.sports || []).map(sport => (
                               <button
                                 key={sport}
-                                className={`px-3 py-1 rounded-lg border font-semibold ${selectedSport === sport ? 'bg-primary-500 text-white' : 'bg-primary-100 text-primary-700'}`}
-                                onClick={e => { e.stopPropagation(); setExpandedSport(prev => ({ ...prev, [schoolId]: selectedSport === sport ? '' : sport })); }}
+                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                  selectedSport === sport
+                                    ? 'bg-primary-500 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedSport(prev => ({
+                                    ...prev,
+                                    [schoolId]: selectedSport === sport ? '' : sport
+                                  }));
+                                }}
                               >
-                                {sport.charAt(0).toUpperCase() + sport.slice(1)}
+                                {sport}
                               </button>
                             ))}
                           </div>
                           {selectedSport && (
-                            <div className="bg-primary-50 rounded-lg p-4">
+                            <div className="mt-4">
                               <div className="font-semibold text-primary-700 mb-2">Games for {selectedSport}</div>
-                              <ul className="space-y-2">
-                                {Array.isArray((school as any).schedules?.[selectedSport]) && (school as any).schedules[selectedSport].length > 0 ? (
-                                  (school as any).schedules[selectedSport].map((game: any, idx: number) => {
-                                    return (
-                                      <li key={idx} className="flex flex-col md:flex-row md:items-center gap-2 bg-white rounded shadow p-2">
-                                        <>
-                                          <span className="font-bold text-primary-700">{game.time ? new Date(game.time).toLocaleString() : ''}</span>
-                                          <span className="text-primary-600">{game.location}</span>
-                                          <span className="text-primary-500">vs {game.opponent}</span>
-                                          {game.status && <span className="text-xs px-2 py-1 rounded bg-primary-100 text-primary-700">{game.status}</span>}
-                                          
-                                          {/* Score Display */}
-                                          {game.score && (game.score.home?.final || game.score.away?.final) && (
-                                            <div className="ml-auto flex flex-col items-end">
-                                              <span className="font-bold text-green-700 text-lg">
-                                                {game.score.home?.final ?? '-'} - {game.score.away?.final ?? '-'}
-                                              </span>
-                                              {/* Period Scores */}
-                                              <div className="flex gap-1 text-xs text-gray-600">
-                                                {getScoreboardColumns(selectedSport).map(col => (
-                                                  <span key={col} className="px-1">
-                                                    {game.score.home?.[col] || '-'}/{game.score.away?.[col] || '-'}
-                                                  </span>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          
-                                          <div className="flex gap-2 mt-2">
-                                            <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => handleEditClick(schoolId, selectedSport, idx, game)}>Edit</button>
-                                            <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDeleteGame(schoolId, selectedSport, game)}>Delete</button>
-                                          </div>
-                                        </>
-                                      </li>
-                                    );
-                                  })
-                                ) : (
-                                  <li className="text-primary-400">No games scheduled for this sport.</li>
-                                )}
-                              </ul>
+                              <div className="space-y-2">
+                                {/* Games would be displayed here */}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -371,184 +416,227 @@ const Admin = () => {
             </div>
           )}
           {activeTab === 'addArticle' && (
-            <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">Add Article</h2>
-              {/* Article Preview */}
-              <div className="w-full max-w-lg mx-auto bg-cream-100 rounded-lg p-6 shadow-lg mb-8">
-                <h4 className="text-lg font-bold text-primary-700 mb-2">Article Preview</h4>
-                <article className="transition-opacity duration-500">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-semibold text-secondary-500 bg-secondary-100 px-3 py-1 rounded-full">
-                      {articleForm.category || 'Category'}
-                    </span>
-                    <span className="text-sm text-primary-500">{articleForm.date || 'Date'}</span>
-                  </div>
-                  {articleImage && (
-                    <img src={articleImage} alt="Preview" className="w-full h-48 object-cover rounded mb-4" />
-                  )}
-                  <h3 className="text-2xl font-bold text-primary-600 mb-4">
-                    {articleForm.title || 'Article Title'}
-                  </h3>
-                  <p className="text-primary-600 leading-relaxed text-lg mb-6">
-                    {articleForm.excerpt || 'Article excerpt will appear here.'}
-                  </p>
-                  {articleForm.content && (
-                    <div className="text-primary-600 leading-relaxed text-base mb-6">
-                      <p className="font-semibold mb-2">Full Content Preview:</p>
-                      <div className="whitespace-pre-wrap">
-                        {articleForm.content}
-                      </div>
-                    </div>
-                  )}
-                  <button className="text-secondary-500 hover:text-secondary-600 font-semibold text-lg transition-colors duration-200" disabled>
-                    Read Full Article →
-                  </button>
-                </article>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-8 w-full">
-                <div className="mb-4 space-y-4">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-primary-700 mb-1">Title *</label>
-                      <input 
-                        type="text" 
-                        placeholder="Article Title" 
-                        value={articleForm.title} 
-                        onChange={e => handleArticleChange('title', e.target.value)} 
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.title ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
-                      />
-                      {!articleForm.title && <p className="text-red-500 text-xs mt-1">Title is required</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-primary-700 mb-1">Category *</label>
-                      <input 
-                        type="text" 
-                        placeholder="News, Sports, Announcement, etc." 
-                        value={articleForm.category} 
-                        onChange={e => handleArticleChange('category', e.target.value)} 
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.category ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
-                      />
-                      {!articleForm.category && <p className="text-red-500 text-xs mt-1">Category is required</p>}
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-primary-700 mb-1">Date *</label>
-                      <input 
-                        type="date" 
-                        value={articleForm.date} 
-                        onChange={e => handleArticleChange('date', e.target.value)} 
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.date ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
-                      />
-                      {!articleForm.date && <p className="text-red-500 text-xs mt-1">Date is required</p>}
-                    </div>
-                    <div>
-                      {/* Empty div for grid layout */}
-                    </div>
-                  </div>
-                  
-                  {/* Excerpt */}
+            <div className="w-full max-w-4xl">
+              <h2 className="text-2xl font-bold text-primary-700 mb-6">Add Article</h2>
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Excerpt *</label>
-                    <textarea 
-                      placeholder="Brief summary of the article (will appear in preview)" 
-                      value={articleForm.excerpt} 
-                      onChange={e => handleArticleChange('excerpt', e.target.value)} 
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${!articleForm.excerpt ? 'border-red-300 bg-red-50' : 'border-primary-200'}`}
-                      rows={3}
-                    />
-                    {!articleForm.excerpt && <p className="text-red-500 text-xs mt-1">Excerpt is required</p>}
-                  </div>
-                  
-                  {/* Full Content */}
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Full Content</label>
-                    <div className="mb-2 text-xs text-primary-600">
-                      <p>• Use double line breaks for paragraphs</p>
-                      <p>• Use <strong>**bold text**</strong> for emphasis</p>
-                      <p>• Use <em>*italic text*</em> for italics</p>
-                    </div>
-                    <textarea 
-                      placeholder="Full article content with proper formatting..." 
-                      value={articleForm.content} 
-                      onChange={e => handleArticleChange('content', e.target.value)} 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                      rows={8}
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Title *</label>
+                    <input
+                      type="text"
+                      value={articleForm.title}
+                      onChange={(e) => handleArticleChange('title', e.target.value)}
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Article title"
                     />
                   </div>
-                  
-                  {/* Image Upload */}
                   <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Featured Image</label>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleArticleImageChange} 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                    />
-                    {articleImage && (
-                      <div className="mt-2">
-                        <img src={articleImage} alt="Preview" className="w-32 h-32 object-cover rounded border" />
-                      </div>
-                    )}
+                    <label className="block text-sm font-medium text-primary-700 mb-1">Category *</label>
+                    <select
+                      value={articleForm.category}
+                      onChange={(e) => handleArticleChange('category', e.target.value)}
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Sports">Sports</option>
+                      <option value="News">News</option>
+                      <option value="Events">Events</option>
+                      <option value="Announcements">Announcements</option>
+                    </select>
                   </div>
                 </div>
-                <button 
-                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold w-full transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-primary-700 mb-1">Excerpt *</label>
+                  <textarea
+                    value={articleForm.excerpt}
+                    onChange={(e) => handleArticleChange('excerpt', e.target.value)}
+                    className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    rows={3}
+                    placeholder="Brief excerpt of the article"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-primary-700 mb-1">Content *</label>
+                  <textarea
+                    value={articleForm.content}
+                    onChange={(e) => handleArticleChange('content', e.target.value)}
+                    className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    rows={8}
+                    placeholder="Full article content"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-primary-700 mb-1">Image (Optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleArticleImageChange}
+                    className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <button
                   onClick={handleAddArticle}
-                  disabled={!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category}
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200"
                 >
                   Add Article
                 </button>
-                {/* Debug info - remove this after testing */}
-                <div className="mt-2 text-xs text-gray-500">
-                  <p>Debug: Title: "{articleForm.title}" | Excerpt: "{articleForm.excerpt}" | Date: "{articleForm.date}" | Category: "{articleForm.category}"</p>
-                  <p>Button disabled: {(!articleForm.title || !articleForm.excerpt || !articleForm.date || !articleForm.category).toString()}</p>
-                </div>
               </div>
-              <h3 className="text-xl font-semibold text-primary-700 mb-2">Existing Articles</h3>
-              <ul className="w-full space-y-4">
-                {articles.length === 0 && <li className="text-primary-400">No articles yet.</li>}
-                {articles.map((article, idx) => (
-                  <li key={article.id} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2">
-                    <div className="flex-1">
+
+              {/* Articles List */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-primary-700 mb-4">Current Articles</h3>
+                                 <div className="space-y-4">
+                   {articles.filter((article: any) => !article.archived).map((article, idx) => (
+                    <div key={article.id} className="border border-primary-200 rounded-lg p-4">
                       <div className="font-bold text-primary-700 text-lg">{article.title}</div>
                       <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
                       <div className="text-primary-600">{article.excerpt}</div>
-                      {article.image && <img src={article.image} alt="Article" className="w-full max-w-xs mt-2 rounded" />}
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => handleArchiveArticle(idx)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Archive
+                        </button>
+                        <button
+                          onClick={() => handleDeleteArticle(idx)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleArchiveArticle(idx)}>Archive</button>
-                      <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArticle(idx)}>Delete</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {/* Archived Articles Section */}
-              {archivedArticles.length > 0 && (
-                <div className="w-full mt-10">
-                  <h3 className="text-xl font-semibold text-primary-700 mb-2">Archived Articles</h3>
-                  <ul className="w-full space-y-4">
-                    {archivedArticles.map((article, idx) => (
-                      <li key={article.id} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center gap-2 opacity-70">
-                        <div className="flex-1">
-                          <div className="font-bold text-primary-700 text-lg">{article.title}</div>
-                          <div className="text-primary-500 text-sm mb-1">{article.category} | {article.date}</div>
-                          <div className="text-primary-600">{article.excerpt}</div>
-                          {article.image && <img src={article.image} alt="Article" className="w-full max-w-xs mt-2 rounded" />}
-                        </div>
-                        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded self-end md:self-auto" onClick={() => handleDeleteArchivedArticle(idx)}>Delete</button>
-                      </li>
-                    ))}
-                  </ul>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Archived Articles */}
+              <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
+                <h3 className="text-xl font-bold text-primary-700 mb-4">Archived Articles</h3>
+                                 <div className="space-y-4">
+                   {articles.filter((article: any) => article.archived).map((article, idx) => (
+                    <div key={article.id} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                      <div className="font-bold text-gray-700 text-lg">{article.title}</div>
+                      <div className="text-gray-500 text-sm mb-1">{article.category} | {article.date}</div>
+                      <div className="text-gray-600">{article.excerpt}</div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => handleDeleteArchivedArticle(idx)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Delete Permanently
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           {activeTab === 'addRoster' && (
             <AdminAddRoster schools={schools} />
+          )}
+          {activeTab === 'addStats' && (
+            <div className="w-full max-w-6xl">
+              <h2 className="text-2xl font-bold text-primary-700 mb-6">Manage Sports Rankings</h2>
+              
+              {/* Sport Selection */}
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-primary-700 mb-2">Select Sport</label>
+                    <select
+                      value={selectedSport}
+                      onChange={(e) => {
+                        setSelectedSport(e.target.value);
+                        setSelectedDivision('');
+                      }}
+                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Choose a sport</option>
+                      <option value="football">Football</option>
+                      <option value="golf">Golf</option>
+                      <option value="boys-soccer">Boys Soccer</option>
+                      <option value="girls-soccer">Girls Soccer</option>
+                      <option value="boys-cross-country">Boys Cross Country</option>
+                      <option value="girls-cross-country">Girls Cross Country</option>
+                    </select>
+                  </div>
+                  
+                  {selectedSport && (
+                    <div>
+                      <label className="block text-sm font-medium text-primary-700 mb-2">Select Division/Cluster</label>
+                      <select
+                        value={selectedDivision}
+                        onChange={(e) => setSelectedDivision(e.target.value)}
+                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">Choose a division/cluster</option>
+                        {sportDivisions[selectedSport as keyof typeof sportDivisions]?.map((division) => (
+                          <option key={division} value={division}>
+                            {division.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Team Rankings Table */}
+              {selectedSport && selectedDivision ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
+                    <thead>
+                      <tr className="bg-green-600">
+                        <th className="px-4 py-3 text-left text-white font-bold uppercase bg-primary-500">Team</th>
+                        <th className="px-4 py-3 text-center text-white font-bold uppercase bg-primary-500">Wins</th>
+                        <th className="px-4 py-3 text-center text-white font-bold uppercase bg-primary-500">Losses</th>
+                        <th className="px-4 py-3 text-center text-white font-bold uppercase bg-primary-500">Win %</th>
+                        <th className="px-4 py-3 text-center text-white font-bold uppercase bg-primary-500">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                                             {(teamData as any)[selectedSport]?.[selectedDivision]?.map((team: string, _index: number) => (
+                        <tr key={team} className={`even:bg-orange-50 odd:bg-green-50 border-b border-orange-300`}>
+                          <td className="px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
+                              defaultValue="0"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
+                              defaultValue="0"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-center text-green-700 font-bold">0.000</td>
+                          <td className="px-4 py-3 text-center">
+                            <button className="bg-primary-500 hover:bg-primary-600 text-white px-3 py-1 rounded text-sm">
+                              Update
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-primary-600 text-lg">
+                    {!selectedSport ? 'Please select a sport first' :
+                     !selectedDivision ? 'Please select a division to view teams' :
+                     'No teams found for this selection'}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </main>

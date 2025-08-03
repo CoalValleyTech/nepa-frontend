@@ -280,8 +280,27 @@ const girlsCrossCountryClusters = [
   },
 ];
 
+const volleyballTeams = [
+  'North Pocono',
+  'Western Wayne',
+  'Mt. View',
+  'Abington Heights',
+  'Blue Ridge',
+  'Dunmore',
+  'Scranton',
+  'Montrose',
+  'Elk Lake',
+  'Valley View',
+  'Susquehanna',
+  'Lakeland',
+  'Lackawanna Trail',
+  'Forest City',
+  'West Scranton',
+  'Mid Valley',
+];
+
 const Sports = () => {
-  const [selectedSport, setSelectedSport] = useState<'football' | 'golf' | 'boys-soccer' | 'girls-soccer' | 'boys-cross-country' | 'girls-cross-country' | null>(null);
+  const [selectedSport, setSelectedSport] = useState<'football' | 'golf-boys' | 'golf-girls' | 'boys-soccer' | 'girls-soccer' | 'boys-cross-country' | 'girls-cross-country' | 'volleyball' | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -305,13 +324,23 @@ const Sports = () => {
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
-                selectedSport === 'golf' 
+                selectedSport === 'golf-boys' 
                   ? 'bg-primary-600 text-cream-100' 
                   : 'bg-primary-500 text-cream-100 hover:bg-primary-600'
               }`}
-              onClick={() => setSelectedSport('golf')}
+              onClick={() => setSelectedSport('golf-boys')}
             >
-              Golf
+              Men's Golf
+            </button>
+            <button
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
+                selectedSport === 'golf-girls' 
+                  ? 'bg-primary-600 text-cream-100' 
+                  : 'bg-primary-500 text-cream-100 hover:bg-primary-600'
+              }`}
+              onClick={() => setSelectedSport('golf-girls')}
+            >
+              Women's Golf
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
@@ -321,7 +350,7 @@ const Sports = () => {
               }`}
               onClick={() => setSelectedSport('boys-soccer')}
             >
-              Boys Soccer
+              Men's Soccer
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
@@ -331,7 +360,7 @@ const Sports = () => {
               }`}
               onClick={() => setSelectedSport('girls-soccer')}
             >
-              Girls Soccer
+              Women's Soccer
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
@@ -341,7 +370,7 @@ const Sports = () => {
               }`}
               onClick={() => setSelectedSport('boys-cross-country')}
             >
-              Boys Cross Country
+              Men's Cross Country
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
@@ -351,7 +380,17 @@ const Sports = () => {
               }`}
               onClick={() => setSelectedSport('girls-cross-country')}
             >
-              Girls Cross Country
+              Women's Cross Country
+            </button>
+            <button
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${
+                selectedSport === 'volleyball' 
+                  ? 'bg-primary-600 text-cream-100' 
+                  : 'bg-primary-500 text-cream-100 hover:bg-primary-600'
+              }`}
+              onClick={() => setSelectedSport('volleyball')}
+            >
+              Women's Volleyball
             </button>
           </div>
         </aside>
@@ -399,10 +438,44 @@ const Sports = () => {
                   ))}
                 </div>
               </div>
+            ) : selectedSport === 'volleyball' ? (
+              <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4 overflow-x-auto">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
+                    <thead>
+                      <tr className="bg-green-600">
+                        <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase bg-primary-500">Team</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Wins</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Losses</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Win %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {volleyballTeams.map((team: string, idx: number) => (
+                        <tr
+                          key={team}
+                          className={
+                            `even:bg-orange-50 odd:bg-green-50` +
+                            (idx !== volleyballTeams.length - 1 ? ' border-b-2 border-orange-300' : '')
+                          }
+                        >
+                          <td className="px-2 sm:px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
+                          <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">0</td>
+                          <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">0</td>
+                          <td className="px-2 sm:px-4 py-3 text-center text-green-700 font-bold">0.000</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             ) : (
               <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4 overflow-x-auto">
                 <ul className="space-y-10">
-                  {(selectedSport === 'football' ? footballDivisions : selectedSport === 'golf' ? golfDivisions : selectedSport === 'boys-soccer' ? boysSoccerDivisions : girlsSoccerDivisions).map((division: any) => (
+                  {(selectedSport === 'football' ? footballDivisions : 
+              selectedSport === 'golf-boys' || selectedSport === 'golf-girls' ? golfDivisions : 
+              selectedSport === 'boys-soccer' ? boysSoccerDivisions : 
+              girlsSoccerDivisions).map((division: any) => (
                     <li key={division.name}>
                       <h3 className="text-xl font-extrabold mb-4 pb-2 border-b-4 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-2 py-2 rounded">
                         {division.name}

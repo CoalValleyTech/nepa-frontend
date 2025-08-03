@@ -48,6 +48,28 @@ const sportIcons: Record<string, string> = {
   volleyball: '/default-volleyball.png',
 };
 
+// Helper function to format sport names
+const formatSportName = (sport: string): string => {
+  const sportNameMap: Record<string, string> = {
+    'football': 'Football',
+    'tennis': 'Tennis',
+    'golf-boys': "Men's Golf",
+    'golf-girls': "Women's Golf",
+    'boys-soccer': "Men's Soccer",
+    'girls-soccer': "Women's Soccer",
+    'boys-cross-country': "Men's Cross Country",
+    'girls-cross-country': "Women's Cross Country",
+    'cross-country-boys': "Men's Cross Country",
+    'cross-country-girls': "Women's Cross Country",
+    'soccer-boys': "Men's Soccer",
+    'soccer-girls': "Women's Soccer",
+    'volleyball': 'Volleyball',
+    'field-hockey': 'Field Hockey'
+  };
+  
+  return sportNameMap[sport] || sport.charAt(0).toUpperCase() + sport.slice(1);
+};
+
 const SchoolPage = () => {
   const { id } = useParams<{ id: string }>();
   const [school, setSchool] = useState<School | null>(null);
@@ -152,7 +174,7 @@ const SchoolPage = () => {
                           className={`w-full text-left px-4 py-3 rounded-lg font-medium shadow-sm transition-colors border border-primary-200 focus:outline-none
                             ${selectedSport === sport ? 'bg-primary-500 text-white' : 'bg-primary-50 text-primary-700 hover:bg-primary-100'}`}
                         >
-                          <span className="text-lg break-words leading-tight">{sport.charAt(0).toUpperCase() + sport.slice(1)}</span>
+                          <span className="text-lg break-words leading-tight">{formatSportName(sport)}</span>
                         </button>
                       ))}
                     </div>
@@ -178,7 +200,7 @@ const SchoolPage = () => {
                   /* Selected Sport with Collapsible Schedule */
                   <div className="bg-white rounded-xl shadow-lg p-6">
                     <h2 className="text-2xl font-semibold text-primary-600 mb-4 break-words leading-tight">
-                      {selectedSport.charAt(0).toUpperCase() + selectedSport.slice(1)}
+                      {formatSportName(selectedSport)}
                     </h2>
                     
                     {/* Schedule Section */}
