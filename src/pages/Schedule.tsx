@@ -100,7 +100,7 @@ const Schedule = () => {
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
       <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-screen-2xl grid grid-cols-1 lg:grid-cols-3 gap-8 justify-center mx-auto">
+        <div className="w-full max-w-screen-2xl flex flex-col gap-8 justify-center mx-auto">
           
           {/* Box 1: Sport Navigation & Today's Games */}
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">

@@ -320,7 +320,7 @@ const Sports = () => {
               Football
             </button>
             <button className="w-full py-3 px-4 rounded-lg bg-primary-500 text-cream-100 font-semibold text-lg hover:bg-primary-600 transition-colors">
-              Tennis
+              Women's Tennis
             </button>
             <button
               className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-colors ${

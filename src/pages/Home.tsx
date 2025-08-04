@@ -123,7 +123,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 </div>
                 <div className="space-y-6 text-cream-100 text-lg">
                   <p>
-                    Welcome to SPAN Sports Hub! We provide statistics, scores, and more for all high schools part of the Lackawanna Interscholastic Athletics Association. Stay tuned as we enter the fall sports season, as we provide you with scores, stats, and leaderboards for Girls Tennis and Football!
+                    Welcome to SPAN Sports Hub! We provide statistics, scores, and more for all high schools part of the Lackawanna Interscholastic Athletics Association. Stay tuned as we enter the fall sports season, as we provide you with scores, stats, and leaderboards for all LIAA sports!
                   </p>
                 </div>
                 <div className="mt-8 flex justify-end">
