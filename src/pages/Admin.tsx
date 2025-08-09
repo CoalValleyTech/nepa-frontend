@@ -35,11 +35,14 @@ const Admin = () => {
 
   const sportDivisions = {
     'football': ['division-1', 'division-2', 'division-3'],
-    'golf': ['division-1', 'division-2'],
+    'golf-boys': ['division-1', 'division-2'],
+    'golf-girls': ['division-1', 'division-2'],
     'boys-soccer': ['division-1', 'division-2', 'division-3'],
     'girls-soccer': ['division-1', 'division-2'],
     'boys-cross-country': ['cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5', 'cluster-6', 'cluster-7', 'cluster-8'],
-    'girls-cross-country': ['cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5', 'cluster-6', 'cluster-7', 'cluster-8']
+    'girls-cross-country': ['cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5', 'cluster-6', 'cluster-7', 'cluster-8'],
+    'volleyball': ['division-1'],
+    'tennis': ['division-1']
   };
 
   const teamData = {
@@ -48,7 +51,11 @@ const Admin = () => {
       'division-2': ['Dunmore Bucks', 'Honesdale Hornets', 'Lakeland Chiefs', 'Mid Valley Spartans', 'West Scranton Invaders', 'Western Wayne Wildcats'],
       'division-3': ['Carbondale Area Chargers', 'Holy Cross Crusaders', 'Lackawanna Trail Lions', 'Old Forge Blue Devils', 'Riverside Vikings', 'Susquehanna Sabers']
     },
-    'golf': {
+    'golf-boys': {
+      'division-1': ['Scranton Prep', 'Abington Heights', 'Honesdale', 'North Pocono', 'Delaware Valley', 'Wallenpaupack'],
+      'division-2': ['Lackawanna Trail', 'Riverside', 'Lakeland', 'Mid Valley', 'Dunmore', 'Western Wayne', 'Blue Ridge', 'Old Forge', 'Montrose', 'Holy Cross', 'Mt. View', 'West Scranton', 'Scranton', 'Elk Lake', 'Forest City', 'Carbondale']
+    },
+    'golf-girls': {
       'division-1': ['Scranton Prep', 'Abington Heights', 'Honesdale', 'North Pocono', 'Delaware Valley', 'Wallenpaupack'],
       'division-2': ['Lackawanna Trail', 'Riverside', 'Lakeland', 'Mid Valley', 'Dunmore', 'Western Wayne', 'Blue Ridge', 'Old Forge', 'Montrose', 'Holy Cross', 'Mt. View', 'West Scranton', 'Scranton', 'Elk Lake', 'Forest City', 'Carbondale']
     },
@@ -80,6 +87,12 @@ const Admin = () => {
       'cluster-6': ['Scranton', 'West Scranton', 'Mid Valley'],
       'cluster-7': ['Lakeland', 'Lack. Trail', 'Western Wayne'],
       'cluster-8': ['Dunmore', 'Riverside', 'Old Forge']
+    },
+    'volleyball': {
+      'division-1': ['Abington Heights', 'North Pocono', 'Scranton Prep', 'Delaware Valley', 'Valley View', 'Wallenpaupack', 'Scranton', 'West Scranton', 'Honesdale', 'Dunmore', 'Lakeland', 'Mid Valley', 'Western Wayne', 'Old Forge', 'Holy Cross', 'Riverside']
+    },
+    'tennis': {
+      'division-1': ['Abington Heights', 'North Pocono', 'Scranton Prep', 'Delaware Valley', 'Valley View', 'Wallenpaupack', 'Scranton', 'West Scranton', 'Honesdale', 'Dunmore', 'Lakeland', 'Mid Valley', 'Western Wayne', 'Old Forge', 'Holy Cross', 'Riverside']
     }
   };
 
@@ -229,6 +242,13 @@ const Admin = () => {
         winPercentage: 0, // Will be calculated in the service
         season: '2024-25'
       };
+      
+      console.log('=== SAVING TEAM STATS ===');
+      console.log('Selected Sport:', selectedSport);
+      console.log('Selected Division:', selectedDivision);
+      console.log('Team Name:', teamName);
+      console.log('Team Stats Object:', teamStats);
+      console.log('Document ID will be:', `${selectedSport}-${selectedDivision}-${teamName.replace(/\s+/g, '-').toLowerCase()}-2024-25`);
       
       await updateTeamStats(teamStats);
       
@@ -600,11 +620,14 @@ const Admin = () => {
                     >
                       <option value="">Choose a sport</option>
                       <option value="football">Football</option>
-                      <option value="golf">Golf</option>
+                      <option value="golf-boys">Men's Golf</option>
+                      <option value="golf-girls">Women's Golf</option>
                       <option value="boys-soccer">Boys Soccer</option>
                       <option value="girls-soccer">Girls Soccer</option>
                       <option value="boys-cross-country">Boys Cross Country</option>
                       <option value="girls-cross-country">Girls Cross Country</option>
+                      <option value="volleyball">Women's Volleyball</option>
+                      <option value="tennis">Women's Tennis</option>
                     </select>
                   </div>
                   

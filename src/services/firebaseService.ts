@@ -5,6 +5,7 @@ import {
   doc, 
   deleteDoc, 
   updateDoc,
+  setDoc,
   query,
   orderBy,
   serverTimestamp,
@@ -701,10 +702,7 @@ export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
       updatedAt: serverTimestamp(),
     };
     
-    await updateDoc(statsRef, statsData).catch(async () => {
-      // Document doesn't exist, create it
-      await addDoc(collection(db, STATS_COLLECTION), { ...statsData, id: statsId });
-    });
+    await setDoc(statsRef, statsData, { merge: true });
     
     console.log('Team stats updated successfully');
   } catch (error: any) {

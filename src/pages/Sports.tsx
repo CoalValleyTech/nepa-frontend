@@ -311,7 +311,9 @@ const Sports = () => {
     
     setStatsLoading(true);
     try {
+      console.log('Loading stats for sport:', sport);
       const stats = await getStatsForSport(sport);
+      console.log('Loaded stats data:', stats);
       setStatsData(prev => ({ ...prev, [sport]: stats }));
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -357,7 +359,7 @@ const Sports = () => {
       );
     }
 
-    // Merge static division structure with dynamic stats
+    // Merge static division structure with dynamic stats and sort teams by performance
     const divisionsWithStats = staticDivisions.map(division => {
       const divisionKey = `division-${division.name.toLowerCase().replace(/\s+/g, '-').replace('division-', '')}`;
       const divisionStats = sportStats?.[divisionKey] || [];
@@ -368,8 +370,28 @@ const Sports = () => {
         return acc;
       }, {} as { [teamName: string]: TeamStats });
 
+      // Sort teams by performance: win percentage descending, then wins descending
+      const sortedTeams = [...division.teams].sort((teamA, teamB) => {
+        const statsA = statsMap[teamA];
+        const statsB = statsMap[teamB];
+        
+        const winPercentA = statsA?.winPercentage || 0;
+        const winPercentB = statsB?.winPercentage || 0;
+        const winsA = statsA?.wins || 0;
+        const winsB = statsB?.wins || 0;
+        
+        // First sort by win percentage (higher is better)
+        if (winPercentB !== winPercentA) {
+          return winPercentB - winPercentA;
+        }
+        
+        // If win percentages are equal, sort by total wins (higher is better)
+        return winsB - winsA;
+      });
+
       return {
         ...division,
+        teams: sortedTeams,
         statsMap
       };
     });
@@ -531,6 +553,25 @@ const Sports = () => {
                       return acc;
                     }, {} as { [teamName: string]: TeamStats });
 
+                    // Sort teams by performance: win percentage descending, then wins descending
+                    const sortedTeams = [...division.teams].sort((teamA, teamB) => {
+                      const statsA = statsMap[teamA];
+                      const statsB = statsMap[teamB];
+                      
+                      const winPercentA = statsA?.winPercentage || 0;
+                      const winPercentB = statsB?.winPercentage || 0;
+                      const winsA = statsA?.wins || 0;
+                      const winsB = statsB?.wins || 0;
+                      
+                      // First sort by win percentage (higher is better)
+                      if (winPercentB !== winPercentA) {
+                        return winPercentB - winPercentA;
+                      }
+                      
+                      // If win percentages are equal, sort by total wins (higher is better)
+                      return winsB - winsA;
+                    });
+
                     return (
                       <div key={division.name} className="bg-white rounded-lg border border-green-300 overflow-hidden">
                         <h3 className="text-lg font-extrabold mb-3 pb-2 border-b-2 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-3 py-2">
@@ -547,7 +588,7 @@ const Sports = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {division.teams.map((team: string, idx: number) => {
+                              {sortedTeams.map((team: string, idx: number) => {
                                 const teamStats = statsMap[team];
                                 const wins = teamStats?.wins || 0;
                                 const losses = teamStats?.losses || 0;
@@ -589,7 +630,26 @@ const Sports = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {volleyballTeams.map((team: string, idx: number) => {
+                      {volleyballTeams
+                        .slice()
+                        .sort((teamA, teamB) => {
+                          const statsA = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === teamA);
+                          const statsB = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === teamB);
+                          
+                          const winPercentA = statsA?.winPercentage || 0;
+                          const winPercentB = statsB?.winPercentage || 0;
+                          const winsA = statsA?.wins || 0;
+                          const winsB = statsB?.wins || 0;
+                          
+                          // First sort by win percentage (higher is better)
+                          if (winPercentB !== winPercentA) {
+                            return winPercentB - winPercentA;
+                          }
+                          
+                          // If win percentages are equal, sort by total wins (higher is better)
+                          return winsB - winsA;
+                        })
+                        .map((team: string, idx: number) => {
                         const teamStats = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === team);
                         const wins = teamStats?.wins || 0;
                         const losses = teamStats?.losses || 0;
