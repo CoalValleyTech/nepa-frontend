@@ -22,7 +22,6 @@ const Admin = () => {
   const [selectedSport, setSelectedSport] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [teamStatsInputs, setTeamStatsInputs] = useState<{ [teamName: string]: { wins: number; losses: number } }>({});
-  const [currentTeamStats, setCurrentTeamStats] = useState<{ [teamName: string]: TeamStats }>({});
   const [statsLoading, setStatsLoading] = useState(false);
 
   // Article form state
@@ -193,7 +192,6 @@ const Admin = () => {
         }
       });
       
-      setCurrentTeamStats(statsMap);
       setTeamStatsInputs(inputsMap);
     } catch (error: any) {
       console.error('Error loading stats:', error);
