@@ -653,7 +653,6 @@ const Admin = () => {
                         </tr>
                       ) : (
                         (teamData as any)[selectedSport]?.[selectedDivision]?.map((team: string, _index: number) => {
-                          const currentStats = currentTeamStats[team];
                           const inputs = teamStatsInputs[team] || { wins: 0, losses: 0 };
                           const winPercentage = inputs.wins + inputs.losses > 0 
                             ? (inputs.wins / (inputs.wins + inputs.losses)).toFixed(3)
