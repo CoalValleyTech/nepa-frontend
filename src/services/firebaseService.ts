@@ -667,3 +667,137 @@ export const deletePlayerFromRoster = async (schoolId: string, sport: string, se
     throw new Error(`Failed to delete player: ${error.message}`);
   }
 }; 
+
+// Team Stats interface
+export interface TeamStats {
+  teamName: string;
+  sport: string;
+  division: string;
+  wins: number;
+  losses: number;
+  winPercentage: number;
+  season?: string;
+  updatedAt?: any;
+}
+
+// Stats Collection
+const STATS_COLLECTION = 'teamStats';
+
+// Add or update team stats
+export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
+  try {
+    const season = teamStats.season || '2024-25';
+    const statsId = `${teamStats.sport}-${teamStats.division}-${teamStats.teamName.replace(/\s+/g, '-').toLowerCase()}-${season}`;
+    
+    const statsRef = doc(db, STATS_COLLECTION, statsId);
+    const winPercentage = teamStats.wins + teamStats.losses > 0 
+      ? parseFloat((teamStats.wins / (teamStats.wins + teamStats.losses)).toFixed(3))
+      : 0;
+    
+    const statsData = {
+      ...teamStats,
+      winPercentage,
+      season,
+      updatedAt: serverTimestamp(),
+    };
+    
+    await updateDoc(statsRef, statsData).catch(async () => {
+      // Document doesn't exist, create it
+      await addDoc(collection(db, STATS_COLLECTION), { ...statsData, id: statsId });
+    });
+    
+    console.log('Team stats updated successfully');
+  } catch (error: any) {
+    console.error('Error updating team stats:', error);
+    throw new Error(`Failed to update team stats: ${error.message}`);
+  }
+};
+
+// Get stats for a specific sport and division
+export const getStatsForDivision = async (sport: string, division: string, season: string = '2024-25'): Promise<TeamStats[]> => {
+  try {
+    const q = query(
+      collection(db, STATS_COLLECTION),
+      where('sport', '==', sport),
+      where('division', '==', division),
+      where('season', '==', season),
+      orderBy('winPercentage', 'desc'),
+      orderBy('wins', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const stats: TeamStats[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      stats.push({ id: doc.id, ...doc.data() } as TeamStats & { id: string });
+    });
+    
+    return stats;
+  } catch (error: any) {
+    console.error('Error getting division stats:', error);
+    throw new Error(`Failed to get division stats: ${error.message}`);
+  }
+};
+
+// Get all stats for a sport
+export const getStatsForSport = async (sport: string, season: string = '2024-25'): Promise<{ [division: string]: TeamStats[] }> => {
+  try {
+    const q = query(
+      collection(db, STATS_COLLECTION),
+      where('sport', '==', sport),
+      where('season', '==', season)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const statsByDivision: { [division: string]: TeamStats[] } = {};
+    
+    querySnapshot.forEach((doc) => {
+      const stats = { id: doc.id, ...doc.data() } as TeamStats & { id: string };
+      if (!statsByDivision[stats.division]) {
+        statsByDivision[stats.division] = [];
+      }
+      statsByDivision[stats.division].push(stats);
+    });
+    
+    // Sort each division by win percentage, then by wins
+    Object.keys(statsByDivision).forEach(division => {
+      statsByDivision[division].sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) {
+          return b.winPercentage - a.winPercentage;
+        }
+        return b.wins - a.wins;
+      });
+    });
+    
+    return statsByDivision;
+  } catch (error: any) {
+    console.error('Error getting sport stats:', error);
+    throw new Error(`Failed to get sport stats: ${error.message}`);
+  }
+};
+
+// Get stats for a specific team
+export const getTeamStats = async (teamName: string, sport: string, division: string, season: string = '2024-25'): Promise<TeamStats | null> => {
+  try {
+    const q = query(
+      collection(db, STATS_COLLECTION),
+      where('teamName', '==', teamName),
+      where('sport', '==', sport),
+      where('division', '==', division),
+      where('season', '==', season),
+      limit(1)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as TeamStats & { id: string };
+  } catch (error: any) {
+    console.error('Error getting team stats:', error);
+    throw new Error(`Failed to get team stats: ${error.message}`);
+  }
+}; 

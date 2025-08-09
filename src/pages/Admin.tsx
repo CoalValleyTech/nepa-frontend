@@ -4,7 +4,7 @@ import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
 import AdminAddRoster from './AdminAddRoster';
-import { getSchools, getArticles, addArticle, deleteArticle, School, Article } from '../services/firebaseService';
+import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats } from '../services/firebaseService';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster' | 'addStats'>('addSchool');
@@ -21,6 +21,9 @@ const Admin = () => {
   // Add Stats states
   const [selectedSport, setSelectedSport] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
+  const [teamStatsInputs, setTeamStatsInputs] = useState<{ [teamName: string]: { wins: number; losses: number } }>({});
+  const [currentTeamStats, setCurrentTeamStats] = useState<{ [teamName: string]: TeamStats }>({});
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Article form state
   const [articleForm, setArticleForm] = useState({
@@ -165,6 +168,81 @@ const Admin = () => {
     }
   };
 
+  // Load current stats for selected sport and division
+  const loadCurrentStats = async () => {
+    if (!selectedSport || !selectedDivision) return;
+    
+    setStatsLoading(true);
+    try {
+      const teams = (teamData as any)[selectedSport]?.[selectedDivision] || [];
+      const statsPromises = teams.map((teamName: string) => 
+        getTeamStats(teamName, selectedSport, selectedDivision)
+      );
+      
+      const statsResults = await Promise.all(statsPromises);
+      const statsMap: { [teamName: string]: TeamStats } = {};
+      const inputsMap: { [teamName: string]: { wins: number; losses: number } } = {};
+      
+      teams.forEach((teamName: string, index: number) => {
+        const stats = statsResults[index];
+        if (stats) {
+          statsMap[teamName] = stats;
+          inputsMap[teamName] = { wins: stats.wins, losses: stats.losses };
+        } else {
+          inputsMap[teamName] = { wins: 0, losses: 0 };
+        }
+      });
+      
+      setCurrentTeamStats(statsMap);
+      setTeamStatsInputs(inputsMap);
+    } catch (error: any) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Update team stats input
+  const handleStatsInputChange = (teamName: string, field: 'wins' | 'losses', value: string) => {
+    const numValue = parseInt(value) || 0;
+    setTeamStatsInputs(prev => ({
+      ...prev,
+      [teamName]: {
+        ...prev[teamName],
+        [field]: numValue
+      }
+    }));
+  };
+
+  // Update team stats in Firebase
+  const handleUpdateTeamStats = async (teamName: string) => {
+    if (!selectedSport || !selectedDivision) return;
+    
+    try {
+      const inputs = teamStatsInputs[teamName];
+      if (!inputs) return;
+      
+      const teamStats: TeamStats = {
+        teamName,
+        sport: selectedSport,
+        division: selectedDivision,
+        wins: inputs.wins,
+        losses: inputs.losses,
+        winPercentage: 0, // Will be calculated in the service
+        season: '2024-25'
+      };
+      
+      await updateTeamStats(teamStats);
+      
+      // Reload stats to get updated data
+      await loadCurrentStats();
+      
+      alert(`Stats updated successfully for ${teamName}!`);
+    } catch (error: any) {
+      alert(`Error updating stats: ${error.message}`);
+    }
+  };
+
 
 
   const handleEditChange = (field: string, value: string) => {
@@ -243,6 +321,11 @@ const Admin = () => {
     loadSchools();
     loadArticles();
   }, []);
+
+  // Load stats when sport or division changes
+  useEffect(() => {
+    loadCurrentStats();
+  }, [selectedSport, selectedDivision]);
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col md:flex-row">
@@ -561,33 +644,55 @@ const Admin = () => {
                       </tr>
                     </thead>
                     <tbody>
-                                             {(teamData as any)[selectedSport]?.[selectedDivision]?.map((team: string, _index: number) => (
-                        <tr key={team} className={`even:bg-orange-50 odd:bg-green-50 border-b border-orange-300`}>
-                          <td className="px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
-                          <td className="px-4 py-3 text-center">
-                            <input
-                              type="number"
-                              min="0"
-                              className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
-                              defaultValue="0"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <input
-                              type="number"
-                              min="0"
-                              className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
-                              defaultValue="0"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-center text-green-700 font-bold">0.000</td>
-                          <td className="px-4 py-3 text-center">
-                            <button className="bg-primary-500 hover:bg-primary-600 text-white px-3 py-1 rounded text-sm">
-                              Update
-                            </button>
+                      {statsLoading ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
+                            Loading stats...
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        (teamData as any)[selectedSport]?.[selectedDivision]?.map((team: string, _index: number) => {
+                          const currentStats = currentTeamStats[team];
+                          const inputs = teamStatsInputs[team] || { wins: 0, losses: 0 };
+                          const winPercentage = inputs.wins + inputs.losses > 0 
+                            ? (inputs.wins / (inputs.wins + inputs.losses)).toFixed(3)
+                            : '0.000';
+                          
+                          return (
+                            <tr key={team} className={`even:bg-orange-50 odd:bg-green-50 border-b border-orange-300`}>
+                              <td className="px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
+                              <td className="px-4 py-3 text-center">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
+                                  value={inputs.wins}
+                                  onChange={(e) => handleStatsInputChange(team, 'wins', e.target.value)}
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="w-16 text-center border border-primary-200 rounded px-2 py-1 text-orange-600 font-bold"
+                                  value={inputs.losses}
+                                  onChange={(e) => handleStatsInputChange(team, 'losses', e.target.value)}
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-center text-green-700 font-bold">{winPercentage}</td>
+                              <td className="px-4 py-3 text-center">
+                                <button 
+                                  className="bg-primary-500 hover:bg-primary-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                                  onClick={() => handleUpdateTeamStats(team)}
+                                >
+                                  Update
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
