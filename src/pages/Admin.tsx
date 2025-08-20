@@ -22,7 +22,6 @@ const Admin = () => {
   const [expandedSport, setExpandedSport] = useState<{ [key: string]: string }>({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGame, setEditingGame] = useState<any>(null);
-  const [editForm, setEditForm] = useState<any>({});
   const [scoreInputs, setScoreInputs] = useState<any>({ home: {}, away: {} });
   
   // Schedule management states
@@ -385,73 +384,11 @@ const Admin = () => {
 
 
 
-  const handleEditChange = (field: string, value: string) => {
-    setEditForm((prev: any) => ({ ...prev, [field]: value }));
-  };
 
-  const getScoreboardColumns = (sport: string) => {
-    switch (sport) {
-      case 'football':
-        return ['Q1', 'Q2', 'Q3', 'Q4'];
-      case 'tennis':
-        return ['Set1', 'Set2', 'Set3'];
-      case 'golf-boys':
-      case 'golf-girls':
-        return ['Hole1', 'Hole2', 'Hole3', 'Hole4', 'Hole5', 'Hole6', 'Hole7', 'Hole8', 'Hole9'];
-      default:
-        return ['Q1', 'Q2', 'Q3', 'Q4'];
-    }
-  };
-
-  const handleScoreInput = (team: 'home' | 'away', col: string, value: string) => {
-    setScoreInputs((prev: any) => ({
-      ...prev,
-      [team]: {
-        ...prev[team],
-        [col]: value
-      }
-    }));
-  };
-
-  const handleEditSave = async (schoolId: string, sport: string, oldGame: any) => {
-    try {
-      const updatedGame = {
-        ...oldGame,
-        ...editForm,
-        score: scoreInputs
-      };
-      
-      // Update the game in the schedule
-      const updatedSchools = schools.map(school => {
-        if (school.id === schoolId) {
-          const schoolWithSchedules = school as any;
-          const updatedSchedules = schoolWithSchedules.schedules?.map((schedule: any) => {
-            if (schedule.sport === sport) {
-              const updatedGames = schedule.games?.map((game: any) => 
-                game.id === oldGame.id ? updatedGame : game
-              );
-              return { ...schedule, games: updatedGames };
-            }
-            return schedule;
-          });
-          return { ...school, schedules: updatedSchedules };
-        }
-        return school;
-      });
-      
-      setSchools(updatedSchools);
-      setShowEditModal(false);
-      setEditingGame(null);
-    } catch (error) {
-      console.error('Error saving game:', error);
-      alert('Error saving game');
-    }
-  };
 
   const handleCancelEdit = () => {
     setShowEditModal(false);
     setEditingGame(null);
-    setEditForm({});
     setScoreInputs({ home: {}, away: {} });
     setGameNotes('');
   };

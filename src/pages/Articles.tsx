@@ -29,10 +29,7 @@ const Articles = () => {
   // Get unique categories for filtering
   const categories = ['all', ...Array.from(new Set(articles.map(article => article.category)))];
   
-  // Filter articles by category
-  const filteredArticles = selectedCategory === 'all' 
-    ? articles 
-    : articles.filter(article => article.category === selectedCategory);
+
 
   // Get top stories (first 3 articles)
   const topStories = articles.slice(0, 3);
