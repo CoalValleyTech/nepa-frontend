@@ -21,13 +21,14 @@ const Schedule = () => {
   // Define all available sports with their display names
   const allSports = [
     { value: 'all', label: 'All Sports', color: 'bg-primary-500' },
-    { value: 'football', label: 'Football', color: 'bg-green-600' },
+    { value: 'football', label: 'Football', color: 'bg-primary-500' },
     { value: 'golf-boys', label: "Men's Golf", color: 'bg-blue-600' },
     { value: 'golf-girls', label: "Women's Golf", color: 'bg-blue-500' },
     { value: 'boys-soccer', label: "Men's Soccer", color: 'bg-purple-600' },
     { value: 'girls-soccer', label: "Women's Soccer", color: 'bg-pink-600' },
     { value: 'boys-cross-country', label: "Men's Cross Country", color: 'bg-orange-600' },
-    { value: 'girls-cross-country', label: "Women's Cross Country", color: 'bg-red-600' }
+    { value: 'girls-cross-country', label: "Women's Cross Country", color: 'bg-red-600' },
+    { value: 'tennis', label: "Women's Tennis", color: 'bg-primary-500' }
   ];
 
   useEffect(() => {
@@ -99,23 +100,23 @@ const Schedule = () => {
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
-      <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-screen-2xl flex flex-col gap-8 justify-center mx-auto">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1 flex flex-col items-center justify-center">
+        <div className="w-full max-w-screen-2xl flex flex-col gap-4 sm:gap-8 justify-center mx-auto">
           
           {/* Box 1: Sport Navigation & Today's Games */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-primary-700 mb-6">Today's Games</h2>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Today's Games</h2>
             
             {/* Sport Navigation Tabs */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <div className="flex flex-wrap gap-2 mb-4">
                 {allSports.map((sport) => (
                   <button
                     key={sport.value}
                     onClick={() => setActiveSportTab(sport.value)}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${
                       activeSportTab === sport.value
-                        ? `${sport.color} text-white shadow-lg`
+                        ? 'bg-primary-500 text-white shadow-lg'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -216,8 +217,8 @@ const Schedule = () => {
           </div>
 
           {/* Box 2: Live Games */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-primary-700 mb-6">Live Games</h2>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Live Games</h2>
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
@@ -231,11 +232,11 @@ const Schedule = () => {
                 <div className="text-sm text-gray-500">Check back later for live action!</div>
               </div>
             ) : (
-              <div className="space-y-4 max-h-[500px] overflow-y-auto">
+              <div className="space-y-4">
                 {liveGames.map((game, idx) => (
-                  <div key={idx} className="bg-primary-50 rounded-xl shadow-lg p-6 flex flex-col items-stretch border-l-4 border-orange-500 hover:shadow-xl transition-shadow duration-300">
-                    {/* Live Game Header */}
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={idx} className="bg-primary-50 rounded-xl shadow-lg p-4 sm:p-6 flex flex-col items-stretch border-l-4 border-orange-500 hover:shadow-xl transition-shadow duration-300">
+                    {/* Live Game Header - Mobile Optimized */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
                       <div className="flex flex-col">
                         <div className="text-primary-700 font-semibold text-xl mb-1">{formatTime(game.time)}</div>
                         <div className="text-orange-600 text-sm font-bold uppercase mb-1">LIVE</div>
@@ -246,15 +247,15 @@ const Schedule = () => {
                       </div>
                     </div>
                     
-                    {/* Teams Section */}
-                    <div className="flex items-center justify-between py-4 border-t border-primary-200">
+                    {/* Teams Section - Mobile Optimized */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 border-t border-primary-200 gap-4">
                       {/* Home Team */}
                       <div className="flex items-center gap-3 flex-1">
                         {game.schoolId && schoolLogoMap[game.schoolId] && (
-                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-12 w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
+                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                         )}
                         <div className="flex flex-col">
-                          <span className="font-bold text-lg text-primary-600">{game.schoolName}</span>
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.schoolName}</span>
                           {game.score && game.score.home && (
                             <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.home.final ?? '-'}</span>
                           )}
@@ -262,14 +263,14 @@ const Schedule = () => {
                       </div>
                       
                       {/* VS Section */}
-                      <div className="flex-shrink-0 mx-4">
+                      <div className="flex-shrink-0 text-center">
                         <span className="text-lg text-primary-400 font-bold">VS</span>
                       </div>
                       
                       {/* Away Team */}
                       <div className="flex items-center gap-3 flex-1 justify-end">
                         <div className="flex flex-col items-end">
-                          <span className="font-bold text-lg text-primary-600">{game.opponent}</span>
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.opponent}</span>
                           {game.score && game.score.away && (
                             <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.away.final ?? '-'}</span>
                           )}
@@ -277,7 +278,7 @@ const Schedule = () => {
                         {(() => {
                           const opp = schools.find((s: any) => s.name === game.opponent);
                           return opp && opp.logoUrl ? (
-                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-12 w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
+                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                           ) : null;
                         })()}
                       </div>
@@ -301,12 +302,12 @@ const Schedule = () => {
           </div>
 
           {/* Box 3: Find a Game */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col min-h-[600px] w-full max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-primary-700 mb-6">Find a Game</h2>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Find a Game</h2>
             
-            {/* Enhanced Filters */}
-            <div className="mb-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Enhanced Filters - Mobile Optimized */}
+            <div className="mb-4 sm:mb-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-primary-700 mb-2">Sport</label>
                   <select
@@ -359,11 +360,11 @@ const Schedule = () => {
                 <div className="text-sm text-gray-500">Try adjusting your filters.</div>
               </div>
             ) : (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto">
+              <div className="space-y-4">
                 {filteredSchedules.map((game, idx) => (
-                  <div key={idx} className="bg-primary-50 rounded-xl shadow-lg p-6 flex flex-col items-stretch hover:shadow-xl transition-shadow duration-300">
-                    {/* Game Header */}
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={idx} className="bg-primary-50 rounded-xl shadow-lg p-4 sm:p-6 flex flex-col items-stretch hover:shadow-xl transition-shadow duration-300">
+                    {/* Game Header - Mobile Optimized */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
                       <div className="flex flex-col">
                         <div className="text-primary-700 font-semibold text-xl mb-1">{formatTime(game.time)}</div>
                         <div className="text-gray-600 text-sm">{game.location}</div>
@@ -373,15 +374,15 @@ const Schedule = () => {
                       </div>
                     </div>
                     
-                    {/* Teams Section */}
-                    <div className="flex items-center justify-between py-4 border-t border-primary-200">
+                    {/* Teams Section - Mobile Optimized */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 border-t border-primary-200 gap-4">
                       {/* Home Team */}
                       <div className="flex items-center gap-3 flex-1">
                         {game.schoolId && schoolLogoMap[game.schoolId] && (
-                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-12 w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
+                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                         )}
                         <div className="flex flex-col">
-                          <span className="font-bold text-lg text-primary-600">{game.schoolName}</span>
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.schoolName}</span>
                           {game.score && game.score.home && (
                             <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.home.final ?? '-'}</span>
                           )}
@@ -389,14 +390,14 @@ const Schedule = () => {
                       </div>
                       
                       {/* VS Section */}
-                      <div className="flex-shrink-0 mx-4">
+                      <div className="flex-shrink-0 text-center">
                         <span className="text-lg text-primary-400 font-bold">VS</span>
                       </div>
                       
                       {/* Away Team */}
                       <div className="flex items-center gap-3 flex-1 justify-end">
                         <div className="flex flex-col items-end">
-                          <span className="font-bold text-lg text-primary-600">{game.opponent}</span>
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.opponent}</span>
                           {game.score && game.score.away && (
                             <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.away.final ?? '-'}</span>
                           )}
@@ -404,11 +405,19 @@ const Schedule = () => {
                         {(() => {
                           const opp = schools.find((s: any) => s.name === game.opponent);
                           return opp && opp.logoUrl ? (
-                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-12 w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
+                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
                           ) : null;
                         })()}
                       </div>
                     </div>
+                    
+                    {/* Game Notes Display */}
+                    {game.notes && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="text-xs text-blue-700 font-semibold mb-1">Game Notes:</div>
+                        <div className="text-sm text-blue-800">{game.notes}</div>
+                      </div>
+                    )}
                     
                     {/* Watch Button */}
                     <div className="mt-4 flex justify-center">

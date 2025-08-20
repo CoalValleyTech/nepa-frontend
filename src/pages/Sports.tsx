@@ -396,52 +396,65 @@ const Sports = () => {
       };
     });
 
+    // For all sports, use 2-column grid layout with centered last division if odd number
     return (
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4 overflow-x-auto">
-        <ul className="space-y-10">
-          {divisionsWithStats.map((division: any) => (
-            <li key={division.name}>
-              <h3 className="text-xl font-extrabold mb-4 pb-2 border-b-4 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-2 py-2 rounded">
-                {division.name}
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
-                  <thead>
-                    <tr className="bg-green-600">
-                      <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase bg-primary-500">Team</th>
-                      <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Wins</th>
-                      <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Losses</th>
-                      <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Win %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {division.teams.map((team: string, idx: number) => {
-                      const teamStats = division.statsMap[team];
-                      const wins = teamStats?.wins || 0;
-                      const losses = teamStats?.losses || 0;
-                      const winPercent = teamStats?.winPercentage || 0;
-                      
-                      return (
-                        <tr
-                          key={team}
-                          className={
-                            `even:bg-orange-50 odd:bg-green-50` +
-                            (idx !== division.teams.length - 1 ? ' border-b-2 border-orange-300' : '')
-                          }
-                        >
-                          <td className="px-2 sm:px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
-                          <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">{wins}</td>
-                          <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">{losses}</td>
-                          <td className="px-2 sm:px-4 py-3 text-center text-green-700 font-bold">{winPercent.toFixed(3)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+      <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4 overflow-x-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {divisionsWithStats.map((division: any, index: number) => {
+            // If this is the last division and there's an odd number, center it
+            const isLastDivision = index === divisionsWithStats.length - 1;
+            const isOddNumberOfDivisions = divisionsWithStats.length % 2 === 1;
+            const shouldCenter = isLastDivision && isOddNumberOfDivisions;
+            
+            return (
+              <div 
+                key={division.name} 
+                className={`bg-white rounded-lg border border-green-300 overflow-hidden ${
+                  shouldCenter ? 'md:col-span-2 md:mx-auto md:w-1/2' : ''
+                }`}
+              >
+                <h3 className="text-lg font-extrabold mb-3 pb-2 border-b-2 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-3 py-2">
+                  {division.name}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-green-600">
+                        <th className="px-2 sm:px-3 py-2 text-left text-white font-bold uppercase bg-primary-500 text-xs">Team</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Wins</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Losses</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Win %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {division.teams.map((team: string, idx: number) => {
+                        const teamStats = division.statsMap[team];
+                        const wins = teamStats?.wins || 0;
+                        const losses = teamStats?.losses || 0;
+                        const winPercent = teamStats?.winPercentage || 0;
+                        
+                        return (
+                          <tr
+                            key={team}
+                            className={
+                              `even:bg-orange-50 odd:bg-green-50` +
+                              (idx !== division.teams.length - 1 ? ' border-b border-orange-200' : '')
+                            }
+                          >
+                            <td className="px-2 sm:px-3 py-2 font-semibold text-green-900 whitespace-nowrap text-xs">{team}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{wins}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{losses}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-green-700 font-bold text-xs">{winPercent.toFixed(3)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       </div>
     );
   };

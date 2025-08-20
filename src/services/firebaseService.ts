@@ -40,6 +40,7 @@ export interface ScheduleEntry {
   status?: string;
   score?: any;
   url?: string;
+  notes?: string;
 }
 
 export interface Article {
@@ -667,6 +668,93 @@ export const deletePlayerFromRoster = async (schoolId: string, sport: string, se
     console.error('Error in deletePlayerFromRoster function:', error);
     throw new Error(`Failed to delete player: ${error.message}`);
   }
+};
+
+// Get schedules for a school and sport
+export const getScheduleForSchool = async (schoolId: string, sport: string): Promise<ScheduleEntry[]> => {
+  try {
+    console.log('Starting getScheduleForSchool function for school:', schoolId, 'sport:', sport);
+    
+    const schoolDoc = await getDoc(doc(db, SCHOOLS_COLLECTION, schoolId));
+    if (!schoolDoc.exists()) {
+      throw new Error('School not found');
+    }
+    
+    const schoolData = schoolDoc.data();
+    const schedules = schoolData.schedules || {};
+    const sportSchedules = schedules[sport] || [];
+    
+    console.log('Schedule data retrieved:', sportSchedules);
+    return sportSchedules;
+  } catch (error: any) {
+    console.error('Error in getScheduleForSchool function:', error);
+    throw new Error(`Failed to get schedule: ${error.message}`);
+  }
+};
+
+// Update schedule entry with scores
+export const updateScheduleWithScores = async (schoolId: string, sport: string, gameIndex: number, updatedGame: ScheduleEntry): Promise<void> => {
+  try {
+    console.log('Starting updateScheduleWithScores function for school:', schoolId, 'sport:', sport, 'gameIndex:', gameIndex);
+    console.log('Updated game data:', updatedGame);
+    
+    const schoolRef = doc(db, SCHOOLS_COLLECTION, schoolId);
+    
+    // Get current schedules
+    const currentSchedules = await getScheduleForSchool(schoolId, sport);
+    
+    // Update the specific game
+    currentSchedules[gameIndex] = updatedGame;
+    
+    // Update the school document
+    await updateDoc(schoolRef, {
+      [`schedules.${sport}`]: currentSchedules,
+      updatedAt: serverTimestamp(),
+    });
+    
+    // Also update the corresponding global schedule entry
+    await updateGlobalScheduleEntry(schoolId, sport, updatedGame);
+    
+    console.log('Schedule updated successfully with scores');
+  } catch (error: any) {
+    console.error('Error in updateScheduleWithScores function:', error);
+    throw new Error(`Failed to update schedule: ${error.message}`);
+  }
+};
+
+// Update global schedule entry when school schedule is updated
+export const updateGlobalScheduleEntry = async (schoolId: string, sport: string, updatedGame: ScheduleEntry): Promise<void> => {
+  try {
+    console.log('Starting updateGlobalScheduleEntry function for school:', schoolId, 'sport:', sport);
+    
+    // Find the global schedule entry that matches this game
+    const q = query(
+      collection(db, 'schedules'),
+      where('schoolId', '==', schoolId),
+      where('sport', '==', sport),
+      where('location', '==', updatedGame.location),
+      where('time', '==', updatedGame.time),
+      where('opponent', '==', updatedGame.opponent)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.docs.length > 0) {
+      // Update the first matching entry
+      const globalScheduleRef = doc(db, 'schedules', snapshot.docs[0].id);
+      await updateDoc(globalScheduleRef, {
+        score: updatedGame.score,
+        status: updatedGame.status,
+        updatedAt: serverTimestamp(),
+      });
+      console.log('Global schedule entry updated successfully');
+    } else {
+      console.log('No matching global schedule entry found to update');
+    }
+  } catch (error: any) {
+    console.error('Error in updateGlobalScheduleEntry function:', error);
+    // Don't throw error here as it's not critical for the main functionality
+  }
 }; 
 
 // Team Stats interface
@@ -687,10 +775,18 @@ const STATS_COLLECTION = 'teamStats';
 // Add or update team stats
 export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
   try {
+    console.log('=== FIREBASE SERVICE: updateTeamStats ===');
+    console.log('Input teamStats:', teamStats);
+    
     const season = teamStats.season || '2024-25';
     const statsId = `${teamStats.sport}-${teamStats.division}-${teamStats.teamName.replace(/\s+/g, '-').toLowerCase()}-${season}`;
     
+    console.log('Generated statsId:', statsId);
+    console.log('Using collection:', STATS_COLLECTION);
+    
     const statsRef = doc(db, STATS_COLLECTION, statsId);
+    console.log('Document reference created:', statsRef.path);
+    
     const winPercentage = teamStats.wins + teamStats.losses > 0 
       ? parseFloat((teamStats.wins / (teamStats.wins + teamStats.losses)).toFixed(3))
       : 0;
@@ -702,11 +798,18 @@ export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
       updatedAt: serverTimestamp(),
     };
     
+    console.log('Final stats data to save:', statsData);
+    console.log('About to call setDoc...');
+    
     await setDoc(statsRef, statsData, { merge: true });
     
-    console.log('Team stats updated successfully');
+    console.log('Team stats updated successfully in Firebase');
   } catch (error: any) {
+    console.error('=== FIREBASE SERVICE ERROR ===');
     console.error('Error updating team stats:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    console.error('Full error object:', error);
     throw new Error(`Failed to update team stats: ${error.message}`);
   }
 };

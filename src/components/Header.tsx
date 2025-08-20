@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { getSchools, School } from '../services/firebaseService'
+import { db } from '../firebase'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -15,17 +16,44 @@ const Header = () => {
     { path: '/schools', label: 'Schools' },
     { path: '/sports', label: 'Sports' },
     { path: '/schedule', label: 'Schedule' },
+    { path: '/articles', label: 'Articles' },
   ]
 
   const isActive = (path: string) => location.pathname === path
 
   useEffect(() => {
     // Fetch schools for dropdown
-    getSchools().then(setSchools).catch(() => setSchools([]))
+    console.log('Header: Component mounted, starting to fetch schools...');
+    console.log('Header: Current schools state:', schools);
+    
+    const loadSchools = async () => {
+      try {
+        console.log('Header: Calling getSchools()...');
+        const schoolsData = await getSchools();
+        console.log('Header: Schools loaded successfully:', schoolsData);
+        console.log('Header: Number of schools:', schoolsData.length);
+        setSchools(schoolsData);
+      } catch (error) {
+        console.error('Header: Error loading schools:', error);
+        console.error('Header: Error details:', error);
+        setSchools([]);
+      }
+    };
+    
+    // Small delay to ensure Firebase is initialized
+    setTimeout(() => {
+      loadSchools();
+    }, 100);
+    
+    // Test Firebase connection
+    console.log('Header: Testing Firebase connection...');
+    console.log('Header: Firebase db object:', db);
+    console.log('Header: Firebase app initialized:', !!db);
   }, [])
 
   // Dropdown open/close handlers with delay to prevent flicker
   const handleDropdownEnter = () => {
+    console.log('Header: Dropdown enter, current schools:', schools);
     if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current)
     setSchoolsDropdownOpen(true)
   }
@@ -80,10 +108,12 @@ const Header = () => {
                     >
                       &times;
                     </button>
-                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
+                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools ({schools.length})</h3>
                     <div className="flex flex-col w-full max-w-md mx-auto space-y-4 mt-6">
                       {schools.length === 0 ? (
-                        <div className="text-primary-400 text-center">No schools available.</div>
+                        <div className="text-primary-400 text-center">
+                          No schools available. (Debug: schools array length is {schools.length})
+                        </div>
                       ) : (
                         schools
                           .slice()
@@ -115,10 +145,12 @@ const Header = () => {
                 {/* Desktop Dropdown */}
                 {schoolsDropdownOpen && (
                   <div className="hidden sm:block absolute left-1/2 top-full mt-2 bg-white text-primary-700 rounded-lg shadow-xl z-50 border border-primary-200 overflow-y-auto w-[1000px] min-w-[1000px] max-w-[95vw] px-10 py-8 transform -translate-x-1/2">
-                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools</h3>
+                    <h3 className="text-lg font-bold mb-3 text-primary-700">Schools ({schools.length})</h3>
                     <div className="grid gap-x-2 gap-y-4 grid-cols-6 w-full max-w-4xl mx-auto">
                       {schools.length === 0 ? (
-                        <div className="text-primary-400 text-center col-span-full">No schools available.</div>
+                        <div className="text-primary-400 text-center col-span-full">
+                          No schools available. (Debug: schools array length is {schools.length})
+                        </div>
                       ) : (
                         schools
                           .slice()

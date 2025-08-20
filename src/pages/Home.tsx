@@ -74,9 +74,10 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
 
 
 
-        // Load games with scores (FINAL status or games with score data)
+        // Load games with scores (FINAL status or games with score data) and live games
         const gamesWithScoresData = allGames.filter((game: any) => 
           (game.status && game.status.toUpperCase() === 'FINAL') ||
+          (game.status && game.status.toUpperCase() === 'LIVE') ||
           (game.score && (game.score.home?.final || game.score.away?.final))
         );
         setGamesWithScores(gamesWithScoresData.slice(0, 5)); // Show up to 5 recent games with scores
@@ -225,19 +226,19 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:w-auto">
                 {/* Scores Section */}
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores</h2>
+                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores & Live Games</h2>
                   <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
                     {gamesWithScores.length === 0 ? (
-                      <p>No recent scores available.</p>
+                      <p>No recent scores or live games available.</p>
                     ) : (
                       gamesWithScores.map((game, index) => {
                         // Get team names
                         const homeTeamName = game.schoolName || 'Home Team';
                         const awayTeamName = game.opponent || 'Away Team';
                         
-                        // Get scores
-                        const homeScore = game.score?.home?.final || 0;
-                        const awayScore = game.score?.away?.final || 0;
+                        // Get scores - for live games without scores, show 0-0
+                        const homeScore = game.score?.home?.final || (game.status === 'LIVE' ? 0 : 0);
+                        const awayScore = game.score?.away?.final || (game.status === 'LIVE' ? 0 : 0);
                         
                         return (
                           <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
@@ -246,6 +247,16 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                               <div className="text-primary-700 font-semibold text-lg">{formatTime(game.time)}</div>
                               <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
                             </div>
+                            
+                            {/* Live Game Indicator */}
+                            {game.status === 'LIVE' && (
+                              <div className="flex items-center justify-center mb-2">
+                                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-3 py-1">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                  <span className="text-xs font-semibold text-red-700">LIVE NOW</span>
+                                </div>
+                              </div>
+                            )}
                             
                             {/* Teams Section with Scores */}
                             <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
@@ -257,7 +268,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                               </div>
                               <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
                                 <div className="text-2xl font-bold text-primary-700 mb-1">
-                                  {homeScore} - {awayScore}
+                                  {game.status === 'LIVE' && !game.score ? '0 - 0' : `${homeScore} - ${awayScore}`}
                                 </div>
                                 {game.status && (
                                   <div className={`text-xs px-2 py-1 rounded-full ${
@@ -279,6 +290,14 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                                 })()}
                               </div>
                             </div>
+                            
+                            {/* Game Notes Display */}
+                            {game.notes && (
+                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="text-xs text-blue-700 font-semibold mb-1">Game Notes:</div>
+                                <div className="text-sm text-blue-800">{game.notes}</div>
+                              </div>
+                            )}
                             
                             {/* Play Button for Livestream (if available) */}
                             {game.url && (

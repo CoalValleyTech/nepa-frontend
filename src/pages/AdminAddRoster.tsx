@@ -9,6 +9,7 @@ interface Player {
   number: string;
   name: string;
   position: string;
+  defensivePosition?: string; // New field for defensive position
   grade: string;
   stats?: {
     [key: string]: string | number;
@@ -22,16 +23,23 @@ interface RosterData {
 }
 
 const SPORTS = [
-  { value: 'football', label: 'Football (Boys)', positions: ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'] },
-  { value: 'soccer-boys', label: 'Soccer (Boys)', positions: ['GK', 'D', 'M', 'F'] },
-  { value: 'soccer-girls', label: 'Soccer (Girls)', positions: ['GK', 'D', 'M', 'F'] },
-  { value: 'volleyball', label: 'Girls Volleyball', positions: ['S', 'OH', 'MB', 'RS', 'L', 'DS'] },
-  { value: 'tennis', label: 'Girls Tennis', positions: ['1 Singles', '2 Singles', '3 Singles', '1 Doubles', '2 Doubles', '3 Doubles'] },
-  { value: 'cross-country-boys', label: 'Cross Country (Boys)', positions: ['Runner'] },
-  { value: 'cross-country-girls', label: 'Cross Country (Girls)', positions: ['Runner'] },
-  { value: 'field-hockey', label: 'Field Hockey (Girls)', positions: ['GK', 'D', 'M', 'F'] },
-  { value: 'golf-boys', label: 'Golf (Boys)', positions: ['Player'] },
-  { value: 'golf-girls', label: 'Golf (Girls)', positions: ['Player'] },
+  { 
+    value: 'football', 
+    label: 'Football (Boys)', 
+    positions: ['QB', 'RB', 'WR', 'TE', 'OL', 'K', 'P'],
+    defensivePositions: ['DL', 'LB', 'CB', 'S', 'DB'],
+    supportsDualPositions: true,
+    requiresPosition: true
+  },
+  { value: 'soccer-boys', label: 'Soccer (Boys)', positions: ['GK', 'D', 'M', 'F'], supportsDualPositions: false, requiresPosition: true },
+  { value: 'soccer-girls', label: 'Soccer (Girls)', positions: ['GK', 'D', 'M', 'F'], supportsDualPositions: false, requiresPosition: true },
+  { value: 'volleyball', label: 'Girls Volleyball', positions: ['S', 'OH', 'MB', 'RS', 'L', 'DS'], supportsDualPositions: false, requiresPosition: true },
+  { value: 'tennis', label: 'Girls Tennis', positions: ['1 Singles', '2 Singles', '3 Singles', '1 Doubles', '2 Doubles', '3 Doubles'], supportsDualPositions: false, requiresPosition: true },
+  { value: 'cross-country-boys', label: 'Cross Country (Boys)', positions: ['Runner'], supportsDualPositions: false, requiresPosition: false },
+  { value: 'cross-country-girls', label: 'Cross Country (Girls)', positions: ['Runner'], supportsDualPositions: false, requiresPosition: false },
+  { value: 'field-hockey', label: 'Field Hockey (Girls)', positions: ['GK', 'D', 'M', 'F'], supportsDualPositions: false, requiresPosition: true },
+  { value: 'golf-boys', label: 'Golf (Boys)', positions: ['Player'], supportsDualPositions: false, requiresPosition: false },
+  { value: 'golf-girls', label: 'Golf (Girls)', positions: ['Player'], supportsDualPositions: false, requiresPosition: false },
 ];
 
 const GRADES = ['9', '10', '11', '12'];
@@ -93,8 +101,6 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
     }
   }, [players.length]);
 
-
-
   const handleEditRoster = async (season: string) => {
     if (!existingRosters[season]) return;
     
@@ -123,8 +129,12 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
       return;
     }
 
-    // Only include players that have all fields filled in
-    const playersWithData = players.filter(player => player.number && player.name && player.position && player.grade);
+    // Only include players that have all required fields filled in
+    const playersWithData = players.filter(player => {
+      const hasRequiredFields = player.number && player.name && player.grade;
+      const hasPosition = selectedSportData?.requiresPosition ? player.position : true;
+      return hasRequiredFields && hasPosition;
+    });
 
     // Allow empty roster (no players) - don't require at least one player
     // When editing, allow empty roster to be saved
@@ -304,7 +314,11 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className={`grid gap-4 ${
+                    selectedSportData?.supportsDualPositions ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5' : 
+                    selectedSportData?.requiresPosition ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}>
                     <div>
                       <label className="block text-sm font-medium text-primary-700 mb-1">Number</label>
                       <input
@@ -329,20 +343,44 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                       />
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-primary-700 mb-1">Position</label>
-                      <select
-                        value={player.position}
-                        onChange={e => handlePlayerChange(index, 'position', e.target.value)}
-                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        disabled={isSubmitting}
-                      >
-                        <option value="">Select position</option>
-                        {selectedSportData?.positions.map(pos => (
-                          <option key={pos} value={pos}>{pos}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {selectedSportData?.requiresPosition && (
+                      <div>
+                        <label className="block text-sm font-medium text-primary-700 mb-1">
+                          {selectedSportData?.supportsDualPositions ? 'Offensive Position' : 'Position'}
+                          {!selectedSportData?.requiresPosition && <span className="text-gray-500 text-xs"> (Optional)</span>}
+                        </label>
+                        <select
+                          value={player.position}
+                          onChange={e => handlePlayerChange(index, 'position', e.target.value)}
+                          className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                          disabled={isSubmitting}
+                        >
+                          <option value="">Select position</option>
+                          {selectedSportData?.positions.map(pos => (
+                            <option key={pos} value={pos}>{pos}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    
+                    {selectedSportData?.supportsDualPositions && (
+                      <div>
+                        <label className="block text-sm font-medium text-primary-700 mb-1">
+                          Defensive Position <span className="text-gray-500 text-xs">(Optional)</span>
+                        </label>
+                        <select
+                          value={player.defensivePosition || ''}
+                          onChange={e => handlePlayerChange(index, 'defensivePosition', e.target.value)}
+                          className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                          disabled={isSubmitting}
+                        >
+                          <option value="">No defensive position</option>
+                          {selectedSportData?.defensivePositions?.map(pos => (
+                            <option key={pos} value={pos}>{pos}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-medium text-primary-700 mb-1">Grade</label>
@@ -359,6 +397,39 @@ const AdminAddRoster: React.FC<AdminAddRosterProps> = ({ schools }) => {
                       </select>
                     </div>
                   </div>
+                  
+                  {/* Position Display for Football */}
+                  {selectedSportData?.supportsDualPositions && player.position && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-primary-200">
+                      <div className="text-sm text-primary-600">
+                        <span className="font-semibold">Position Summary:</span>
+                        <div className="mt-1">
+                          <span className="inline-block bg-primary-100 text-primary-800 px-2 py-1 rounded text-xs mr-2">
+                            Offense: {player.position}
+                          </span>
+                          {player.defensivePosition && (
+                            <span className="inline-block bg-secondary-100 text-secondary-800 px-2 py-1 rounded text-xs">
+                              Defense: {player.defensivePosition}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Position Display for Other Sports */}
+                  {selectedSportData?.requiresPosition && !selectedSportData?.supportsDualPositions && player.position && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-primary-200">
+                      <div className="text-sm text-primary-600">
+                        <span className="font-semibold">Position:</span>
+                        <div className="mt-1">
+                          <span className="inline-block bg-primary-100 text-primary-800 px-2 py-1 rounded text-xs">
+                            {player.position}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

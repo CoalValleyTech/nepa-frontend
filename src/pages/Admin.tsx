@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 import AdminAddSchool from './AdminAddSchool';
 import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
 import AdminAddRoster from './AdminAddRoster';
-import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats } from '../services/firebaseService';
+import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats, getScheduleForSchool, updateScheduleWithScores } from '../services/firebaseService';
 
 const Admin = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
   const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster' | 'addStats'>('addSchool');
   const [schools, setSchools] = useState<School[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(true);
@@ -17,6 +24,13 @@ const Admin = () => {
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [scoreInputs, setScoreInputs] = useState<any>({ home: {}, away: {} });
+  
+  // Schedule management states
+  const [schoolSchedules, setSchoolSchedules] = useState<{ [schoolId: string]: { [sport: string]: any[] } }>({});
+  const [editingGameIndex, setEditingGameIndex] = useState<number | null>(null);
+  const [editingSchoolId, setEditingSchoolId] = useState<string | null>(null);
+  const [editingSport, setEditingSport] = useState<string>('');
+  const [gameNotes, setGameNotes] = useState<string>('');
 
   // Add Stats states
   const [selectedSport, setSelectedSport] = useState<string>('');
@@ -95,6 +109,84 @@ const Admin = () => {
       'division-1': ['Abington Heights', 'North Pocono', 'Scranton Prep', 'Delaware Valley', 'Valley View', 'Wallenpaupack', 'Scranton', 'West Scranton', 'Honesdale', 'Dunmore', 'Lakeland', 'Mid Valley', 'Western Wayne', 'Old Forge', 'Holy Cross', 'Riverside']
     }
   };
+
+  // Authentication effect
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        // User is not authenticated, redirect to login
+        navigate('/login');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // Load schools effect
+  useEffect(() => {
+    if (user) {
+      loadSchools();
+    }
+  }, [user]);
+
+  // Load articles effect
+  useEffect(() => {
+    if (user) {
+      loadArticles();
+    }
+  }, [user]);
+
+  // Load current stats effect
+  useEffect(() => {
+    if (user && selectedSport && selectedDivision) {
+      loadCurrentStats();
+    }
+  }, [user, selectedSport, selectedDivision]);
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading authentication...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show a message (will redirect)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+          <p className="text-sm text-gray-500 mt-2">You need to be logged in to access the admin panel</p>
+          <button 
+            onClick={() => navigate('/login')} 
+            className="mt-4 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleArticleChange = (field: string, value: string) => setArticleForm((prev: any) => ({ ...prev, [field]: value }));
   
@@ -199,7 +291,11 @@ const Admin = () => {
         const stats = statsResults[index];
         if (stats) {
           statsMap[teamName] = stats;
-          inputsMap[teamName] = { wins: stats.wins, losses: stats.losses };
+          // Ensure wins and losses are always numbers, defaulting to 0 if undefined/null
+          inputsMap[teamName] = { 
+            wins: Number(stats.wins) || 0, 
+            losses: Number(stats.losses) || 0 
+          };
         } else {
           inputsMap[teamName] = { wins: 0, losses: 0 };
         }
@@ -215,7 +311,9 @@ const Admin = () => {
 
   // Update team stats input
   const handleStatsInputChange = (teamName: string, field: 'wins' | 'losses', value: string) => {
-    const numValue = parseInt(value) || 0;
+    // Ensure we always have a valid number, defaulting to 0 for empty/invalid values
+    const numValue = value === '' ? 0 : (parseInt(value) || 0);
+    
     setTeamStatsInputs(prev => ({
       ...prev,
       [teamName]: {
@@ -227,18 +325,32 @@ const Admin = () => {
 
   // Update team stats in Firebase
   const handleUpdateTeamStats = async (teamName: string) => {
-    if (!selectedSport || !selectedDivision) return;
+    if (!selectedSport || !selectedDivision) {
+      alert('Please select both a sport and division first');
+      return;
+    }
     
     try {
       const inputs = teamStatsInputs[teamName];
-      if (!inputs) return;
+      if (!inputs) {
+        // If inputs don't exist, create default values
+        setTeamStatsInputs(prev => ({
+          ...prev,
+          [teamName]: { wins: 0, losses: 0 }
+        }));
+        return;
+      }
+      
+      // Ensure wins and losses are always valid numbers
+      const wins = Number(inputs.wins) || 0;
+      const losses = Number(inputs.losses) || 0;
       
       const teamStats: TeamStats = {
         teamName,
         sport: selectedSport,
         division: selectedDivision,
-        wins: inputs.wins,
-        losses: inputs.losses,
+        wins: wins,
+        losses: losses,
         winPercentage: 0, // Will be calculated in the service
         season: '2024-25'
       };
@@ -250,13 +362,23 @@ const Admin = () => {
       console.log('Team Stats Object:', teamStats);
       console.log('Document ID will be:', `${selectedSport}-${selectedDivision}-${teamName.replace(/\s+/g, '-').toLowerCase()}-2024-25`);
       
+      console.log('Calling updateTeamStats...');
       await updateTeamStats(teamStats);
+      console.log('updateTeamStats completed successfully');
       
+      console.log('Reloading stats...');
       // Reload stats to get updated data
       await loadCurrentStats();
+      console.log('Stats reloaded successfully');
       
       alert(`Stats updated successfully for ${teamName}!`);
     } catch (error: any) {
+      console.error('Error in handleUpdateTeamStats:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       alert(`Error updating stats: ${error.message}`);
     }
   };
@@ -331,19 +453,113 @@ const Admin = () => {
     setEditingGame(null);
     setEditForm({});
     setScoreInputs({ home: {}, away: {} });
+    setGameNotes('');
+  };
+
+  // Load schedules for a school and sport
+  const loadSchoolSchedules = async (schoolId: string, sport: string) => {
+    try {
+      const schedules = await getScheduleForSchool(schoolId, sport);
+      setSchoolSchedules(prev => ({
+        ...prev,
+        [schoolId]: {
+          ...prev[schoolId],
+          [sport]: schedules
+        }
+      }));
+    } catch (error) {
+      console.error('Error loading schedules:', error);
+      // Set empty array if no schedules found
+      setSchoolSchedules(prev => ({
+        ...prev,
+        [schoolId]: {
+          ...prev[schoolId],
+          [sport]: []
+        }
+      }));
+    }
+  };
+
+  // Handle sport selection to load schedules
+  const handleSportSelection = async (schoolId: string, sport: string) => {
+    const newSelectedSport = expandedSport[schoolId] === sport ? '' : sport;
+    setExpandedSport(prev => ({
+      ...prev,
+      [schoolId]: newSelectedSport
+    }));
+    
+    if (newSelectedSport) {
+      await loadSchoolSchedules(schoolId, newSelectedSport);
+    }
+  };
+
+  // Start editing a game's scores
+  const handleStartScoreEdit = (schoolId: string, sport: string, gameIndex: number, game: any) => {
+    setEditingSchoolId(schoolId);
+    setEditingSport(sport);
+    setEditingGameIndex(gameIndex);
+    setEditingGame(game);
+    
+    // Initialize score inputs with existing scores or empty values
+    const homeScore = game.score?.home?.final || '';
+    const awayScore = game.score?.away?.final || '';
+    setScoreInputs({
+      home: { final: homeScore },
+      away: { final: awayScore }
+    });
+    
+    // Initialize notes with existing notes or empty string
+    setGameNotes(game.notes || '');
+    
+    setShowEditModal(true);
+  };
+
+  // Save score updates
+  const handleSaveScores = async () => {
+    if (!editingSchoolId || !editingSport || editingGameIndex === null || !editingGame) return;
+    
+    try {
+      const updatedGame = {
+        ...editingGame,
+        score: scoreInputs,
+        notes: gameNotes,
+        status: scoreInputs.home.final && scoreInputs.away.final ? 'FINAL' : 'UPCOMING'
+      };
+      
+      await updateScheduleWithScores(editingSchoolId, editingSport, editingGameIndex, updatedGame);
+      
+      // Update local state
+      setSchoolSchedules(prev => ({
+        ...prev,
+        [editingSchoolId]: {
+          ...prev[editingSchoolId],
+          [editingSport]: prev[editingSchoolId][editingSport].map((game: any, index: number) => 
+            index === editingGameIndex ? updatedGame : game
+          )
+        }
+      }));
+      
+      // Close modal and reset state
+      setShowEditModal(false);
+      setEditingGame(null);
+      setEditingGameIndex(null);
+      setEditingSchoolId(null);
+      setEditingSport('');
+      setScoreInputs({ home: {}, away: {} });
+      setGameNotes('');
+      
+      alert('Scores and notes updated successfully!');
+    } catch (error) {
+      console.error('Error saving scores:', error);
+      alert('Error saving scores');
+    }
   };
 
 
 
-  useEffect(() => {
-    loadSchools();
-    loadArticles();
-  }, []);
 
-  // Load stats when sport or division changes
-  useEffect(() => {
-    loadCurrentStats();
-  }, [selectedSport, selectedDivision]);
+
+
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col md:flex-row">
@@ -398,12 +614,32 @@ const Admin = () => {
           >
             Add Stats
           </button>
+          
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left bg-red-600 text-white hover:bg-red-700 mt-8"
+          >
+            Logout
+          </button>
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center py-8 px-4">
-        <h1 className="text-3xl font-bold text-primary-700 mb-8">Admin Dashboard</h1>
+        {/* Header with Logout */}
+        <div className="w-full flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-primary-700">Admin Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
         <div className="w-full flex flex-col items-center">
           {activeTab === 'addSchool' && (
             <AdminAddSchool
@@ -424,12 +660,15 @@ const Admin = () => {
           )}
           {activeTab === 'editSchedule' && (
             <div className="w-full flex flex-col items-center">
-              <h2 className="text-2xl font-bold text-primary-700 mb-4">Edit Schedule</h2>
-              <div className="text-primary-500 mb-6">(Select a school to edit its sports schedules)</div>
+              <h2 className="text-2xl font-bold text-primary-700 mb-4">Edit Schedule & Scores</h2>
+              <div className="text-primary-500 mb-6">Select a school to view and edit its sports schedules and scores</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
                 {schools.map(school => {
                   const schoolId = school.id || '';
                   const selectedSport = expandedSport[schoolId] || '';
+                  const schoolScheduleData = schoolSchedules[schoolId] || {};
+                  const sportSchedules = schoolScheduleData[selectedSport] || [];
+                  
                   return (
                     <div
                       key={schoolId}
@@ -454,10 +693,7 @@ const Admin = () => {
                                 }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setExpandedSport(prev => ({
-                                    ...prev,
-                                    [schoolId]: selectedSport === sport ? '' : sport
-                                  }));
+                                  handleSportSelection(schoolId, sport);
                                 }}
                               >
                                 {sport}
@@ -466,10 +702,62 @@ const Admin = () => {
                           </div>
                           {selectedSport && (
                             <div className="mt-4">
-                              <div className="font-semibold text-primary-700 mb-2">Games for {selectedSport}</div>
-                              <div className="space-y-2">
-                                {/* Games would be displayed here */}
+                              <div className="font-semibold text-primary-700 mb-2">
+                                Games for {selectedSport} ({sportSchedules.length})
                               </div>
+                              {sportSchedules.length === 0 ? (
+                                <div className="text-gray-500 text-sm text-center py-4">
+                                  No games scheduled for {selectedSport}
+                                </div>
+                              ) : (
+                                <div className="space-y-3 max-h-64 overflow-y-auto">
+                                  {sportSchedules.map((game, gameIndex) => (
+                                    <div key={gameIndex} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div className="text-sm font-medium text-gray-700">
+                                          {game.opponent}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {new Date(game.time).toLocaleDateString()}
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-600 mb-2">
+                                        {game.location} • {new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </div>
+                                                                             <div className="flex justify-between items-center">
+                                         <div className="text-sm">
+                                           {game.score?.home?.final !== undefined && game.score?.away?.final !== undefined ? (
+                                             <span className="font-semibold">
+                                               {game.score.home.final} - {game.score.away.final}
+                                             </span>
+                                           ) : (
+                                             <span className="text-gray-500">No score</span>
+                                           )}
+                                         </div>
+                                         <button
+                                           onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleStartScoreEdit(schoolId, selectedSport, gameIndex, game);
+                                           }}
+                                           className="bg-primary-500 hover:bg-primary-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                         >
+                                           {game.score?.home?.final !== undefined ? 'Edit Score' : 'Add Score'}
+                                         </button>
+                                       </div>
+                                       
+                                       {/* Game Notes Display */}
+                                       {game.notes && (
+                                         <div className="mt-2 pt-2 border-t border-gray-200">
+                                           <div className="text-xs text-gray-600 font-medium mb-1">Game Notes:</div>
+                                           <div className="text-xs text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
+                                             {game.notes}
+                                           </div>
+                                         </div>
+                                       )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -736,7 +1024,9 @@ const Admin = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-primary-700">Edit Game</h2>
+                <h2 className="text-2xl font-bold text-primary-700">
+                  {editingGameIndex !== null ? 'Edit Game Scores' : 'Edit Game'}
+                </h2>
                 <button
                   onClick={handleCancelEdit}
                   className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none"
@@ -747,135 +1037,98 @@ const Admin = () => {
               </div>
               
               <div className="space-y-4">
-                {/* Basic Game Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Date & Time</label>
-                    <input 
-                      type="datetime-local" 
-                      value={editForm.time || ''} 
-                      onChange={e => handleEditChange('time', e.target.value)} 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                    />
+                {/* Game Info Display */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                      <div className="text-sm text-gray-900">
+                        {new Date(editingGame.time).toLocaleDateString()} at {new Date(editingGame.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      <div className="text-sm text-gray-900">{editingGame.location}</div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Location</label>
-                    <input 
-                      type="text" 
-                      value={editForm.location || ''} 
-                      onChange={e => handleEditChange('location', e.target.value)} 
-                      placeholder="Location" 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                    />
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Opponent</label>
+                    <div className="text-sm text-gray-900">{editingGame.opponent}</div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Opponent</label>
-                    <input 
-                      type="text" 
-                      value={editForm.opponent || ''} 
-                      onChange={e => handleEditChange('opponent', e.target.value)} 
-                      placeholder="Opponent" 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-primary-700 mb-1">Status</label>
-                    <select 
-                      value={editForm.status || ''} 
-                      onChange={e => handleEditChange('status', e.target.value)} 
-                      className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    >
-                      <option value="">Select Status</option>
-                      <option value="SCHEDULED">Scheduled</option>
-                      <option value="LIVE">Live</option>
-                      <option value="FINAL">Final</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Score Input Section */}
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="text-lg font-semibold text-primary-700 mb-4">Score</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Home Team Score */}
-                    <div>
-                      <div className="text-sm font-medium text-primary-600 mb-2">Home Team</div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          {getScoreboardColumns(editingGame.sport).map(col => (
-                            <div key={`home-${col}`} className="flex flex-col items-center">
-                              <label className="text-xs text-gray-600 mb-1">{col}</label>
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                value={scoreInputs.home?.[col] || ''}
-                                onChange={e => handleScoreInput('home', col, e.target.value)}
-                                className="w-12 h-10 text-center border rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-green-700">Final:</label>
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={scoreInputs.home?.final || ''}
-                            onChange={e => handleScoreInput('home', 'final', e.target.value)}
-                            className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Away Team Score */}
-                    <div>
-                      <div className="text-sm font-medium text-primary-600 mb-2">Away Team</div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2">
-                          {getScoreboardColumns(editingGame.sport).map(col => (
-                            <div key={`away-${col}`} className="flex flex-col items-center">
-                              <label className="text-xs text-gray-600 mb-1">{col}</label>
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                value={scoreInputs.away?.[col] || ''}
-                                onChange={e => handleScoreInput('away', col, e.target.value)}
-                                className="w-12 h-10 text-center border rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-green-700">Final:</label>
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={scoreInputs.away?.final || ''}
-                            onChange={e => handleScoreInput('away', 'final', e.target.value)}
-                            className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                                 {/* Score Input Section */}
+                 <div className="border-t pt-4">
+                   <h3 className="text-lg font-semibold text-primary-700 mb-4">Update Scores</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {/* Home Team Score */}
+                     <div>
+                       <div className="text-sm font-medium text-primary-600 mb-2">Home Team Score</div>
+                       <div className="space-y-2">
+                         <div className="flex items-center gap-2">
+                           <label className="text-sm font-medium text-green-700">Final Score:</label>
+                           <input
+                             type="number"
+                             min="0"
+                             placeholder="0"
+                             value={scoreInputs.home?.final || ''}
+                             onChange={e => setScoreInputs((prev: any) => ({
+                               ...prev,
+                               home: { ...prev.home, final: e.target.value }
+                             }))}
+                             className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           />
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* Away Team Score */}
+                     <div>
+                       <div className="text-sm font-medium text-primary-600 mb-2">Away Team Score</div>
+                       <div className="space-y-2">
+                         <div className="flex items-center gap-2">
+                           <label className="text-sm font-medium text-green-700">Final Score:</label>
+                           <input
+                             type="number"
+                             min="0"
+                             placeholder="0"
+                             value={scoreInputs.away?.final || ''}
+                             onChange={e => setScoreInputs((prev: any) => ({
+                               ...prev,
+                               away: { ...prev.away, final: e.target.value }
+                             }))}
+                             className="w-20 h-10 text-center border rounded text-sm font-bold bg-green-50 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           />
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Game Notes Section */}
+                 <div className="border-t pt-4">
+                   <h3 className="text-lg font-semibold text-primary-700 mb-4">Game Notes</h3>
+                   <div>
+                     <label className="block text-sm font-medium text-primary-700 mb-2">
+                       Additional Notes (Optional)
+                     </label>
+                     <textarea
+                       value={gameNotes}
+                       onChange={(e) => setGameNotes(e.target.value)}
+                       placeholder="Enter any notes about the game (e.g., weather conditions, key plays, injuries, etc.)"
+                       rows={4}
+                       className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                     />
+                   </div>
+                 </div>
                 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t">
                   <button 
                     className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200" 
-                    onClick={() => handleEditSave(editingGame.schoolId, editingGame.sport, editForm)}
+                    onClick={handleSaveScores}
                   >
-                    Save Changes
+                    Save Scores
                   </button>
                   <button 
                     className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-semibold transition-colors duration-200" 
