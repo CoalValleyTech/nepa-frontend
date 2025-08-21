@@ -778,32 +778,62 @@ export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
     console.log('=== FIREBASE SERVICE: updateTeamStats ===');
     console.log('Input teamStats:', teamStats);
     
-    const season = teamStats.season || '2024-25';
-    const statsId = `${teamStats.sport}-${teamStats.division}-${teamStats.teamName.replace(/\s+/g, '-').toLowerCase()}-${season}`;
+    // Import auth to check authentication state
+    const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+    const auth = getAuth();
     
-    console.log('Generated statsId:', statsId);
-    console.log('Using collection:', STATS_COLLECTION);
-    
-    const statsRef = doc(db, STATS_COLLECTION, statsId);
-    console.log('Document reference created:', statsRef.path);
-    
-    const winPercentage = teamStats.wins + teamStats.losses > 0 
-      ? parseFloat((teamStats.wins / (teamStats.wins + teamStats.losses)).toFixed(3))
-      : 0;
-    
-    const statsData = {
-      ...teamStats,
-      winPercentage,
-      season,
-      updatedAt: serverTimestamp(),
-    };
-    
-    console.log('Final stats data to save:', statsData);
-    console.log('About to call setDoc...');
-    
-    await setDoc(statsRef, statsData, { merge: true });
-    
-    console.log('Team stats updated successfully in Firebase');
+    // Check if user is authenticated
+    return new Promise((resolve, reject) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        unsubscribe(); // Unsubscribe immediately
+        
+        if (!user) {
+          console.error('No authenticated user found');
+          reject(new Error('User not authenticated'));
+          return;
+        }
+        
+        console.log('User authenticated:', user.email);
+        
+        try {
+          const season = teamStats.season || '2024-25';
+          const statsId = `${teamStats.sport}-${teamStats.division}-${teamStats.teamName.replace(/\s+/g, '-').toLowerCase()}-${season}`;
+          
+          console.log('Generated statsId:', statsId);
+          console.log('Using collection:', STATS_COLLECTION);
+          
+          const statsRef = doc(db, STATS_COLLECTION, statsId);
+          console.log('Document reference created:', statsRef.path);
+          
+          const winPercentage = teamStats.wins + teamStats.losses > 0 
+            ? parseFloat((teamStats.wins / (teamStats.wins + teamStats.losses)).toFixed(3))
+            : 0;
+          
+          const statsData = {
+            ...teamStats,
+            winPercentage,
+            season,
+            updatedAt: serverTimestamp(),
+            userId: user.uid, // Add user ID for tracking
+          };
+          
+          console.log('Final stats data to save:', statsData);
+          console.log('About to call setDoc...');
+          
+          await setDoc(statsRef, statsData, { merge: true });
+          
+          console.log('Team stats updated successfully in Firebase');
+          resolve();
+        } catch (error: any) {
+          console.error('=== FIREBASE SERVICE ERROR ===');
+          console.error('Error updating team stats:', error);
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
+          console.error('Full error object:', error);
+          reject(new Error(`Failed to update team stats: ${error.message}`));
+        }
+      });
+    });
   } catch (error: any) {
     console.error('=== FIREBASE SERVICE ERROR ===');
     console.error('Error updating team stats:', error);
