@@ -104,7 +104,7 @@ const Schedule = () => {
         <div className="w-full max-w-screen-2xl flex flex-col gap-4 sm:gap-8 justify-center mx-auto">
           
           {/* Box 1: Live Games - NOW THE FIRST AND MOST PROMINENT SECTION */}
-          <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto border-2 border-orange-200">
+          <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-6xl mx-auto border-2 border-orange-200">
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
               <h2 className="text-2xl sm:text-4xl font-bold text-red-700">Live Games</h2>
@@ -129,7 +129,7 @@ const Schedule = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 {liveGames.map((game, idx) => (
                   <div key={idx} className="bg-white rounded-xl shadow-lg p-4 sm:p-6 flex flex-col items-stretch border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300">
                     {/* Live Game Header - Enhanced for prominence */}
