@@ -103,7 +103,106 @@ const Schedule = () => {
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1 flex flex-col items-center justify-center">
         <div className="w-full max-w-screen-2xl flex flex-col gap-4 sm:gap-8 justify-center mx-auto">
           
-          {/* Box 1: Sport Navigation & Today's Games */}
+          {/* Box 1: Live Games - NOW THE FIRST AND MOST PROMINENT SECTION */}
+          <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto border-2 border-orange-200">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <h2 className="text-2xl sm:text-4xl font-bold text-red-700">Live Games</h2>
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            </div>
+            
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+                Loading live games...
+              </div>
+            ) : error ? (
+              <div className="text-center text-red-500 py-8">{error}</div>
+            ) : liveGames.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-red-600 text-lg mb-2 font-semibold">No live games right now</div>
+                <div className="text-red-500 text-sm">Check back later for live action!</div>
+                <div className="mt-4 p-3 bg-white rounded-lg border border-orange-200">
+                  <p className="text-xs text-orange-700">
+                    <strong>Tip:</strong> Live games appear here when they have a status of "LIVE" in the database.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {liveGames.map((game, idx) => (
+                  <div key={idx} className="bg-white rounded-xl shadow-lg p-4 sm:p-6 flex flex-col items-stretch border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300">
+                    {/* Live Game Header - Enhanced for prominence */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
+                      <div className="flex flex-col">
+                        <div className="text-red-700 font-semibold text-xl mb-1">{formatTime(game.time)}</div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                          <span className="text-red-600 text-sm font-bold uppercase">LIVE NOW</span>
+                        </div>
+                        <div className="text-gray-600 text-sm">{game.location}</div>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold text-white ${getSportColor(game.sport)}`}>
+                        {game.sport?.charAt(0).toUpperCase() + game.sport?.slice(1)}
+                      </div>
+                    </div>
+                    
+                    {/* Teams Section - Enhanced for live games */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 border-t border-orange-200 gap-4">
+                      {/* Home Team */}
+                      <div className="flex items-center gap-3 flex-1">
+                        {game.schoolId && schoolLogoMap[game.schoolId] && (
+                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-orange-200 flex-shrink-0" />
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.schoolName}</span>
+                          {game.score && game.score.home && (
+                            <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.home.final ?? '-'}</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* VS Section */}
+                      <div className="flex-shrink-0 text-center">
+                        <span className="text-lg text-red-500 font-bold">VS</span>
+                      </div>
+                      
+                      {/* Away Team */}
+                      <div className="flex items-center gap-3 flex-1 justify-end">
+                        <div className="flex flex-col items-end">
+                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.opponent}</span>
+                          {game.score && game.score.away && (
+                            <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.away.final ?? '-'}</span>
+                          )}
+                        </div>
+                        {(() => {
+                          const opp = schools.find((s: any) => s.name === game.opponent);
+                          return opp && opp.logoUrl ? (
+                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-orange-200 flex-shrink-0" />
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+                    
+                    {/* Live Stream Button - Enhanced */}
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        onClick={() => window.open(game.url || 'https://example.com/stream', '_blank')}
+                        className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        title="Watch Live Stream"
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Box 2: Today's Games - Now second priority */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Today's Games</h2>
             
@@ -216,92 +315,7 @@ const Schedule = () => {
             )}
           </div>
 
-          {/* Box 2: Live Games */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Live Games</h2>
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                Loading...
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500 py-8">{error}</div>
-            ) : liveGames.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-primary-400 text-lg mb-2">No live games right now.</div>
-                <div className="text-sm text-gray-500">Check back later for live action!</div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {liveGames.map((game, idx) => (
-                  <div key={idx} className="bg-primary-50 rounded-xl shadow-lg p-4 sm:p-6 flex flex-col items-stretch border-l-4 border-orange-500 hover:shadow-xl transition-shadow duration-300">
-                    {/* Live Game Header - Mobile Optimized */}
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
-                      <div className="flex flex-col">
-                        <div className="text-primary-700 font-semibold text-xl mb-1">{formatTime(game.time)}</div>
-                        <div className="text-orange-600 text-sm font-bold uppercase mb-1">LIVE</div>
-                        <div className="text-gray-600 text-sm">{game.location}</div>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold text-white ${getSportColor(game.sport)}`}>
-                        {game.sport?.charAt(0).toUpperCase() + game.sport?.slice(1)}
-                      </div>
-                    </div>
-                    
-                    {/* Teams Section - Mobile Optimized */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 border-t border-primary-200 gap-4">
-                      {/* Home Team */}
-                      <div className="flex items-center gap-3 flex-1">
-                        {game.schoolId && schoolLogoMap[game.schoolId] && (
-                          <img src={schoolLogoMap[game.schoolId]} alt={game.schoolName + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                        )}
-                        <div className="flex flex-col">
-                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.schoolName}</span>
-                          {game.score && game.score.home && (
-                            <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.home.final ?? '-'}</span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* VS Section */}
-                      <div className="flex-shrink-0 text-center">
-                        <span className="text-lg text-primary-400 font-bold">VS</span>
-                      </div>
-                      
-                      {/* Away Team */}
-                      <div className="flex items-center gap-3 flex-1 justify-end">
-                        <div className="flex flex-col items-end">
-                          <span className="font-bold text-base sm:text-lg text-primary-600">{game.opponent}</span>
-                          {game.score && game.score.away && (
-                            <span className="bg-green-100 px-2 py-1 rounded text-sm font-bold">{game.score.away.final ?? '-'}</span>
-                          )}
-                        </div>
-                        {(() => {
-                          const opp = schools.find((s: any) => s.name === game.opponent);
-                          return opp && opp.logoUrl ? (
-                            <img src={opp.logoUrl} alt={game.opponent + ' logo'} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded bg-white border border-primary-200 flex-shrink-0" />
-                          ) : null;
-                        })()}
-                      </div>
-                    </div>
-                    
-                    {/* Live Stream Button */}
-                    <div className="mt-4 flex justify-center">
-                      <button
-                        onClick={() => window.open(game.url || 'https://example.com/stream', '_blank')}
-                        className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl"
-                      >
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Box 3: Find a Game */}
+          {/* Box 3: Find a Game - Now third priority */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-4 sm:p-8 flex flex-col w-full max-w-4xl mx-auto">
             <h2 className="text-2xl sm:text-4xl font-bold text-primary-700 mb-4 sm:mb-6">Find a Game</h2>
             

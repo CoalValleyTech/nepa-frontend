@@ -70,6 +70,14 @@ const Schools = () => {
             <div className="text-center py-12">
               <div className="text-primary-500 text-lg">No schools available yet.</div>
               <div className="text-primary-400 mt-2">Check back soon for updates!</div>
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
+                <p className="text-sm text-blue-700 mb-2">
+                  <strong>Admin Note:</strong> If you're an administrator, you can add schools through the admin panel.
+                </p>
+                <p className="text-xs text-blue-600">
+                  The database is currently empty. Once schools are added, they will appear here automatically.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

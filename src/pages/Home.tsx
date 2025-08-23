@@ -217,6 +217,11 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 {articles.length === 0 && (
                   <div className="w-full bg-white rounded-lg shadow p-6 text-center">
                     <p className="text-primary-400">No articles available. Check back soon for updates!</p>
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
+                      <p className="text-xs text-blue-700">
+                        <strong>Note:</strong> The database is currently empty. Once articles are added through the admin panel, they will appear here automatically.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

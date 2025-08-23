@@ -8,6 +8,7 @@ import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
 import AdminAddRoster from './AdminAddRoster';
 import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats, getScheduleForSchool, updateScheduleWithScores } from '../services/firebaseService';
+import { initializeSampleData } from '../initSampleData';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -204,6 +205,22 @@ const Admin = () => {
       navigate('/login');
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  // Initialize sample data function
+  const handleInitializeSampleData = async () => {
+    try {
+      if (window.confirm('This will add sample schools and articles to your database. Continue?')) {
+        await initializeSampleData();
+        alert('Sample data initialized successfully! Please refresh the page to see the new data.');
+        // Reload the data
+        loadSchools();
+        loadArticles();
+      }
+    } catch (error) {
+      console.error('Error initializing sample data:', error);
+      alert('Error initializing sample data. Please check the console for details.');
     }
   };
 
@@ -813,6 +830,14 @@ const Admin = () => {
             onClick={() => setActiveTab('addStats')}
           >
             Add Stats
+          </button>
+          
+          {/* Sample Data Button */}
+          <button
+            onClick={handleInitializeSampleData}
+            className="w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left bg-green-600 text-white hover:bg-green-700 mt-4"
+          >
+            Initialize Sample Data
           </button>
           
           {/* Logout Button */}
