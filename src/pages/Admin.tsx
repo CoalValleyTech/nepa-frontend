@@ -52,7 +52,6 @@ const Admin = () => {
 
   // Featured Scores states
   const [featuredScores, setFeaturedScores] = useState<any[]>([]);
-  const [availableGames, setAvailableGames] = useState<any[]>([]);
   const [featuredScoresLoading, setFeaturedScoresLoading] = useState(false);
 
   // Article form state
@@ -1704,35 +1703,9 @@ const Admin = () => {
                 </div>
 
                 {/* Available Games */}
-                {availableGames.length > 0 && (
-                  <div>
-                    <h4 className="text-md font-semibold text-primary-700 mb-3">Available Games to Feature</h4>
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                      {availableGames.map((game) => (
-                        <div key={game.id} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-semibold text-gray-800">
-                                {game.schoolName} vs {game.opponent}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {game.score?.home?.final || 0} - {game.score?.away?.final || 0} • {new Date(game.time).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                // TODO: Add to featured scores
-                              }}
-                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                            >
-                              Add to Featured
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-600">Available games functionality coming soon...</p>
+                </div>
 
                 {featuredScoresLoading && (
                   <div className="text-center py-4">

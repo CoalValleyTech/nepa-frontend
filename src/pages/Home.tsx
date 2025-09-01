@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSchools, getGlobalSchedules, getArticles, getStatsForSport, TeamStats } from '../services/firebaseService';
+import { getSchools, getArticles, getStatsForSport } from '../services/firebaseService';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -7,11 +7,7 @@ export default function Home() {
   const [showPopup, setShowPopup] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [upcomingGames, setUpcomingGames] = useState<any[]>([]);
-
-  const [gamesWithScores, setGamesWithScores] = useState<any[]>([]);
   const [schools, setSchools] = useState<any[]>([]);
-  const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
   
   // Divisional Leaders state
   const [divisionalLeaders, setDivisionalLeaders] = useState<any[]>([]);
@@ -78,38 +74,13 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     loadData();
   }, []);
 
-  // Load schools and upcoming games
+  // Load schools
   useEffect(() => {
     const loadData = async () => {
       try {
         // Load schools
         const schoolsData = await getSchools();
         setSchools(schoolsData);
-        
-        // Create logo map
-        const logoMap: Record<string, string> = {};
-        for (const s of schoolsData) {
-          if (s.id && s.logoUrl) logoMap[s.id] = s.logoUrl;
-        }
-        setSchoolLogoMap(logoMap);
-        
-        // Load upcoming games
-        const allGames = await getGlobalSchedules();
-        const upcoming = allGames.filter((game: any) => 
-          game.status && game.status.toUpperCase() === 'UPCOMING'
-        );
-        setUpcomingGames(upcoming.slice(0, 3)); // Show only first 3 upcoming games
-
-
-
-        // Load games with scores (FINAL status or games with score data) and live games
-        const gamesWithScoresData = allGames.filter((game: any) => 
-          (game.status && game.status.toUpperCase() === 'FINAL') ||
-          (game.status && game.status.toUpperCase() === 'LIVE') ||
-          (game.score && (game.score.home?.final || game.score.away?.final))
-        );
-        setGamesWithScores(gamesWithScoresData.slice(0, 5)); // Show up to 5 recent games with scores
-
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -124,13 +95,6 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
       checkAvailableSports();
     }
   }, [schools]);
-
-  // Helper to format time
-  function formatTime(dateStr: string) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
 
   // Load divisional leaders for current sport
   const loadDivisionalLeaders = async (sportKey: string) => {
@@ -350,7 +314,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                             
                             {/* Division Leaders */}
                             <div className="transition-all duration-500 ease-in-out">
-                              {divisionalLeaders.map((leader, index) => (
+                              {divisionalLeaders.map((leader) => (
                                 <div 
                                   key={`${leader.sportKey}-${leader.division}`}
                                   className="bg-primary-50 rounded-xl shadow p-4 cursor-pointer hover:bg-primary-100 transition-colors mb-3"
