@@ -1641,6 +1641,11 @@ const Admin = () => {
                       // TODO: Add functionality to load available games
                       setFeaturedScoresLoading(true);
                       // Load games with scores from all schools
+                      // Temporary placeholder to satisfy TypeScript
+                      setTimeout(() => {
+                        setFeaturedScores([]);
+                        setFeaturedScoresLoading(false);
+                      }, 1000);
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
                   >
