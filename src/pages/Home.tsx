@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getSchools, getGlobalSchedules, getArticles } from '../services/firebaseService';
+import { getSchools, getGlobalSchedules, getArticles, getStatsForSport, TeamStats } from '../services/firebaseService';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const [expanded, setExpanded] = useState(false);
@@ -11,6 +12,33 @@ export default function Home() {
   const [gamesWithScores, setGamesWithScores] = useState<any[]>([]);
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolLogoMap, setSchoolLogoMap] = useState<Record<string, string>>({});
+  
+  // Divisional Leaders state
+  const [divisionalLeaders, setDivisionalLeaders] = useState<any[]>([]);
+  const [currentSportIndex, setCurrentSportIndex] = useState(0);
+  const [availableSports, setAvailableSports] = useState<any[]>([]);
+  const navigate = useNavigate();
+  
+  // Sports configuration for divisional leaders
+  const sportsList = [
+    { key: 'football', name: 'Football' },
+    { key: 'basketball', name: 'Basketball' },
+    { key: 'baseball', name: 'Baseball' },
+    { key: 'softball', name: 'Softball' },
+    { key: 'volleyball', name: 'Volleyball' },
+    { key: 'tennis', name: 'Tennis' },
+    { key: 'boys-soccer', name: 'Boys Soccer' },
+    { key: 'girls-soccer', name: 'Girls Soccer' },
+    { key: 'boys-cross-country', name: 'Boys Cross Country' },
+    { key: 'girls-cross-country', name: 'Girls Cross Country' },
+    { key: 'track', name: 'Track & Field' },
+    { key: 'swimming', name: 'Swimming' },
+    { key: 'wrestling', name: 'Wrestling' },
+    { key: 'field-hockey', name: 'Field Hockey' },
+    { key: 'lacrosse', name: 'Lacrosse' },
+    { key: 'golf-boys', name: 'Men\'s Golf' },
+    { key: 'golf-girls', name: 'Women\'s Golf' }
+  ];
   
   // Default article if no articles exist
   const defaultArticle = {
@@ -90,12 +118,98 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     loadData();
   }, []);
 
+  // Check available sports when schools are loaded
+  useEffect(() => {
+    if (schools.length > 0) {
+      checkAvailableSports();
+    }
+  }, [schools]);
+
   // Helper to format time
   function formatTime(dateStr: string) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
+
+  // Load divisional leaders for current sport
+  const loadDivisionalLeaders = async (sportKey: string) => {
+    try {
+      const statsByDivision = await getStatsForSport(sportKey);
+      const leaders: any[] = [];
+      
+      Object.entries(statsByDivision).forEach(([division, teams]) => {
+        if (teams.length > 0) {
+          // Get the top team (first in the array since it's already sorted by win percentage)
+          const topTeam = teams[0];
+          // Try to find school by team name, then by school name
+          const school = schools.find(s => 
+            s.name === topTeam.teamName || 
+            s.name === topTeam.teamName.replace(' Boys', '').replace(' Girls', '') ||
+            s.name === topTeam.teamName.replace('Boys ', '').replace('Girls ', '')
+          );
+          leaders.push({
+            ...topTeam,
+            division,
+            schoolLogo: school?.logoUrl,
+            sportKey
+          });
+        }
+      });
+      
+      setDivisionalLeaders(leaders);
+    } catch (error) {
+      console.error('Error loading divisional leaders:', error);
+      setDivisionalLeaders([]);
+    }
+  };
+
+  // Check which sports have data and load divisional leaders
+  const checkAvailableSports = async () => {
+    if (schools.length === 0) return;
+    
+    const sportsWithData: any[] = [];
+    
+    for (const sport of sportsList) {
+      try {
+        const statsByDivision = await getStatsForSport(sport.key);
+        let hasData = false;
+        
+        Object.values(statsByDivision).forEach((teams: any) => {
+          if (teams.length > 0) {
+            hasData = true;
+          }
+        });
+        
+        if (hasData) {
+          sportsWithData.push(sport);
+        }
+      } catch (error) {
+        console.error(`Error checking data for ${sport.key}:`, error);
+      }
+    }
+    
+    setAvailableSports(sportsWithData);
+    
+    // Load data for the first available sport
+    if (sportsWithData.length > 0) {
+      loadDivisionalLeaders(sportsWithData[0].key);
+    }
+  };
+
+  // Rotate through available sports every 15 seconds
+  useEffect(() => {
+    if (availableSports.length > 0) {
+      const currentSport = availableSports[currentSportIndex];
+      loadDivisionalLeaders(currentSport.key);
+      
+      const interval = setInterval(() => {
+        setCurrentSportIndex((prev) => (prev + 1) % availableSports.length);
+      }, 15000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentSportIndex, availableSports]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -147,25 +261,6 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               {/* Left Side - Latest News and Article */}
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-primary-500 mb-6">Latest News</h2>
-                
-                {/* Article Navigation */}
-                {articles.length > 1 && (
-                  <div className="flex gap-2 mb-4 overflow-x-auto">
-                    {articles.map((article, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedArticle(article)}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
-                          selectedArticle === article
-                            ? 'bg-primary-500 text-white'
-                            : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                        }`}
-                      >
-                        {article.title.length > 20 ? article.title.substring(0, 20) + '...' : article.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 
                 {/* Article Preview Section */}
                 {selectedArticle && (
@@ -231,166 +326,76 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:w-auto">
                 {/* Scores Section */}
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores & Live Games</h2>
+                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores</h2>
                   <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
-                    {gamesWithScores.length === 0 ? (
-                      <p>No recent scores or live games available.</p>
-                    ) : (
-                      gamesWithScores.map((game, index) => {
-                        // Get team names
-                        const homeTeamName = game.schoolName || 'Home Team';
-                        const awayTeamName = game.opponent || 'Away Team';
-                        
-                        // Get scores - for live games without scores, show 0-0
-                        const homeScore = game.score?.home?.final || (game.status === 'LIVE' ? 0 : 0);
-                        const awayScore = game.score?.away?.final || (game.status === 'LIVE' ? 0 : 0);
-                        
-                        return (
-                          <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
-                            {/* Header Section */}
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
-                              <div className="text-primary-700 font-semibold text-lg">{formatTime(game.time)}</div>
-                              <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
-                            </div>
-                            
-                            {/* Live Game Indicator */}
-                            {game.status === 'LIVE' && (
-                              <div className="flex items-center justify-center mb-2">
-                                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-3 py-1">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                  <span className="text-xs font-semibold text-red-700">LIVE NOW</span>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Teams Section with Scores */}
-                            <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
-                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
-                                {game.schoolId && schoolLogoMap[game.schoolId] && (
-                                  <img src={schoolLogoMap[game.schoolId]} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
-                                )}
-                                <span className="truncate max-w-[80px]">{homeTeamName}</span>
-                              </div>
-                              <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
-                                <div className="text-2xl font-bold text-primary-700 mb-1">
-                                  {game.status === 'LIVE' && !game.score ? '0 - 0' : `${homeScore} - ${awayScore}`}
-                                </div>
-                                {game.status && (
-                                  <div className={`text-xs px-2 py-1 rounded-full ${
-                                    game.status === 'LIVE' ? 'bg-red-100 text-red-700' :
-                                    game.status === 'FINAL' ? 'bg-green-100 text-green-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                  {game.status}
-                                </div>
-                                )}
-                              </div>
-                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
-                                <span className="truncate max-w-[80px] text-right">{awayTeamName}</span>
-                                {(() => {
-                                  const opp = schools.find((s: any) => s.name === game.opponent);
-                                  return opp && opp.logoUrl ? (
-                                    <img src={opp.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
-                                  ) : null;
-                                })()}
-                              </div>
-                            </div>
-                            
-                            {/* Game Notes Display */}
-                            {game.notes && (
-                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="text-xs text-blue-700 font-semibold mb-1">Game Notes:</div>
-                                <div className="text-sm text-blue-800">{game.notes}</div>
-                              </div>
-                            )}
-                            
-                            {/* Play Button for Livestream (if available) */}
-                            {game.url && (
-                              <div className="mt-3 flex justify-center">
-                                <button
-                                  onClick={() => window.open(game.url, '_blank')}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl"
-                                  title="Watch Live Stream"
-                                >
-                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
+                    <p>Check back soon!</p>
                   </div>
                 </div>
-                {/* Vertical Line Divider between Scores and Schedule */}
-                <div className="hidden lg:block w-px bg-primary-300"></div>
-                {/* Schedule Section */}
-                <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Schedule</h2>
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {upcomingGames.length === 0 ? (
-                      <div className="text-center text-primary-400 font-semibold">
-                        <p>No games scheduled.</p>
-                        <p className="text-sm mt-1">Check back soon!</p>
+                                {/* Divisional Leaders Section */}
+                {availableSports.length > 0 && (
+                  <>
+                    <div className="hidden lg:block w-px bg-primary-300"></div>
+                    <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
+                      <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Divisional Leaders</h2>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {divisionalLeaders.length > 0 ? (
+                          <>
+                            {/* Sport Header */}
+                            <div className="text-center mb-4 transition-all duration-500 ease-in-out">
+                              <h3 className="text-lg font-semibold text-primary-700">
+                                {availableSports[currentSportIndex]?.name}
+                              </h3>
+                              <p className="text-xs text-primary-400">Click to view full rankings</p>
+                            </div>
+                            
+                            {/* Division Leaders */}
+                            <div className="transition-all duration-500 ease-in-out">
+                              {divisionalLeaders.map((leader, index) => (
+                                <div 
+                                  key={`${leader.sportKey}-${leader.division}`}
+                                  className="bg-primary-50 rounded-xl shadow p-4 cursor-pointer hover:bg-primary-100 transition-colors mb-3"
+                                  onClick={() => navigate(`/sports?selectedSport=${leader.sportKey}`)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {leader.schoolLogo && (
+                                        <img 
+                                          src={leader.schoolLogo} 
+                                          alt={`${leader.teamName} logo`} 
+                                          className="h-10 w-10 object-contain rounded bg-white border border-primary-200" 
+                                        />
+                                      )}
+                                      <div>
+                                        <div className="font-semibold text-primary-700 text-sm">
+                                          {leader.teamName}
+                                        </div>
+                                        <div className="text-xs text-primary-500">
+                                          {leader.division.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-lg font-bold text-primary-600">
+                                        {leader.wins}-{leader.losses}
+                                      </div>
+                                      <div className="text-xs text-primary-400">
+                                        {(leader.winPercentage * 100).toFixed(1)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center text-primary-400 font-semibold">
+                            <p>Loading divisional leaders...</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      upcomingGames.map((game, index) => {
-                        // Get team names
-                        const homeTeamName = game.schoolName || 'Home Team';
-                        const awayTeamName = game.opponent || 'Away Team';
-                        
-                        return (
-                          <div key={index} className="bg-primary-50 rounded-xl shadow p-4 flex flex-col items-stretch">
-                            {/* Header Section */}
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
-                              <div className="text-primary-700 font-semibold text-lg">{formatTime(game.time)}</div>
-                              <div className="text-gray-600 text-sm mt-1 sm:mt-0">{game.location}</div>
-                            </div>
-                            
-                            {/* Teams Section */}
-                            <div className="flex items-center justify-between py-2 border-t border-b border-primary-200">
-                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600">
-                                {game.schoolId && schoolLogoMap[game.schoolId] && (
-                                  <img src={schoolLogoMap[game.schoolId]} alt={homeTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
-                                )}
-                                <span className="truncate max-w-[80px]">{homeTeamName}</span>
-                              </div>
-                              <div className="flex-shrink-0 flex flex-col items-center justify-center mx-2">
-                                <span className="text-xs text-primary-400">VS</span>
-                              </div>
-                              <div className="flex-1 flex items-center gap-2 text-lg font-bold text-primary-600 justify-end">
-                                <span className="truncate max-w-[80px] text-right">{awayTeamName}</span>
-                                {(() => {
-                                  const opp = schools.find((s: any) => s.name === game.opponent);
-                                  return opp && opp.logoUrl ? (
-                                    <img src={opp.logoUrl} alt={awayTeamName + ' logo'} className="h-8 w-8 object-contain rounded bg-white border border-primary-200" />
-                                  ) : null;
-                                })()}
-                              </div>
-                            </div>
-                            
-                            {/* Play Button for Livestream */}
-                            {game.url && (
-                              <div className="mt-3 flex justify-center">
-                                <button
-                                  onClick={() => window.open(game.url, '_blank')}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-full font-semibold transition-colors duration-200 shadow-lg hover:shadow-xl"
-                                  title="Watch Live Stream"
-                                >
-                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

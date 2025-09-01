@@ -15,7 +15,7 @@ const Admin = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster' | 'addStats'>('addSchool');
+  const [activeTab, setActiveTab] = useState<'addSchool' | 'addSport' | 'addSchedule' | 'addGame' | 'editSchedule' | 'addArticle' | 'addRoster' | 'addStats' | 'featuredScores'>('addSchool');
   const [schools, setSchools] = useState<School[]>([]);
   const [schoolsLoading, setSchoolsLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -31,15 +31,29 @@ const Admin = () => {
   const [editingSchoolId, setEditingSchoolId] = useState<string | null>(null);
   const [editingSport, setEditingSport] = useState<string>('');
   const [gameNotes, setGameNotes] = useState<string>('');
+  const [detailedGameNotes, setDetailedGameNotes] = useState<{
+    homeTeamNotes: string;
+    awayTeamNotes: string;
+    generalNotes: string;
+  }>({
+    homeTeamNotes: '',
+    awayTeamNotes: '',
+    generalNotes: ''
+  });
 
   // Add Stats states
   const [selectedSport, setSelectedSport] = useState<string>('');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
-  const [teamStatsInputs, setTeamStatsInputs] = useState<{ [teamName: string]: { wins: number; losses: number } }>({});
+  const [teamStatsInputs, setTeamStatsInputs] = useState<{ [teamName: string]: { wins: number; losses: number; overall: string } }>({});
   const [statsLoading, setStatsLoading] = useState(false);
   const [rankedTeams, setRankedTeams] = useState<Array<{ teamName: string; wins: number; losses: number; winPercentage: number; rank: number }>>([]);
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [editingRankings, setEditingRankings] = useState<Array<{ teamName: string; wins: number; losses: number; winPercentage: number; rank: number }>>([]);
+
+  // Featured Scores states
+  const [featuredScores, setFeaturedScores] = useState<any[]>([]);
+  const [availableGames, setAvailableGames] = useState<any[]>([]);
+  const [featuredScoresLoading, setFeaturedScoresLoading] = useState(false);
 
   // Article form state
   const [articleForm, setArticleForm] = useState({
@@ -357,9 +371,9 @@ const Admin = () => {
       }
       
       // Create default inputs map with all teams having 0 wins and 0 losses
-      const inputsMap: { [teamName: string]: { wins: number; losses: number } } = {};
+      const inputsMap: { [teamName: string]: { wins: number; losses: number; overall: string } } = {};
       teams.forEach((teamName: string) => {
-        inputsMap[teamName] = { wins: 0, losses: 0 };
+        inputsMap[teamName] = { wins: 0, losses: 0, overall: '0-0' };
       });
       
       // Try to fetch existing stats from Firebase, but don't fail if they don't exist
@@ -376,7 +390,8 @@ const Admin = () => {
           if (stats && stats.wins !== undefined && stats.losses !== undefined) {
             inputsMap[teamName] = { 
               wins: Number(stats.wins) || 0, 
-              losses: Number(stats.losses) || 0 
+              losses: Number(stats.losses) || 0,
+              overall: stats.overall || `${Number(stats.wins) || 0}-${Number(stats.losses) || 0}`
             };
           }
         });
@@ -396,9 +411,9 @@ const Admin = () => {
       console.error('Error loading stats:', error);
       // Even if there's an error, try to show teams with default values
       const teams = (teamData as any)[selectedSport]?.[selectedDivision] || [];
-      const inputsMap: { [teamName: string]: { wins: number; losses: number } } = {};
+      const inputsMap: { [teamName: string]: { wins: number; losses: number; overall: string } } = {};
       teams.forEach((teamName: string) => {
-        inputsMap[teamName] = { wins: 0, losses: 0 };
+        inputsMap[teamName] = { wins: 0, losses: 0, overall: '0-0' };
       });
       setTeamStatsInputs(inputsMap);
       const rankings = calculateRankings(inputsMap);
@@ -409,35 +424,32 @@ const Admin = () => {
   };
 
   // Update team stats input
-  const handleStatsInputChange = (teamName: string, field: 'wins' | 'losses', value: string) => {
+  const handleStatsInputChange = (teamName: string, field: 'wins' | 'losses' | 'overall', value: string) => {
     console.log('handleStatsInputChange called:', { teamName, field, value });
-    
-    // Ensure we always have a valid number, defaulting to 0 for empty/invalid values
-    const numValue = value === '' ? 0 : (parseInt(value) || 0);
-    
-    console.log('Setting new value:', numValue);
     
     setTeamStatsInputs(prev => {
       const newState = {
         ...prev,
         [teamName]: {
           ...prev[teamName],
-          [field]: numValue
+          [field]: field === 'overall' ? value : (value === '' ? 0 : (parseInt(value) || 0))
         }
       };
       console.log('New state:', newState);
       return newState;
     });
     
-    // Also update the rankedTeams to reflect the change immediately
-    setRankedTeams(prev => {
-      const updated = prev.map(team => {
-        if (team.teamName === teamName) {
-          const currentInputs = teamStatsInputs[teamName] || { wins: 0, losses: 0 };
-          const newWins = field === 'wins' ? numValue : currentInputs.wins;
-          const newLosses = field === 'losses' ? numValue : currentInputs.losses;
-          const totalGames = newWins + newLosses;
-          const winPercentage = totalGames > 0 ? newWins / totalGames : 0;
+    // Also update the rankedTeams to reflect the change immediately (only for wins/losses)
+    if (field !== 'overall') {
+      setRankedTeams(prev => {
+        const updated = prev.map(team => {
+          if (team.teamName === teamName) {
+            const currentInputs = teamStatsInputs[teamName] || { wins: 0, losses: 0 };
+            const numValue = value === '' ? 0 : (parseInt(value) || 0);
+            const newWins = field === 'wins' ? numValue : currentInputs.wins;
+            const newLosses = field === 'losses' ? numValue : currentInputs.losses;
+            const totalGames = newWins + newLosses;
+            const winPercentage = totalGames > 0 ? newWins / totalGames : 0;
           
           return {
             ...team,
@@ -467,10 +479,11 @@ const Admin = () => {
       
       return sorted;
     });
+    }
   };
 
   // Calculate and sort teams by ranking
-  const calculateRankings = (teams: { [teamName: string]: { wins: number; losses: number } }) => {
+  const calculateRankings = (teams: { [teamName: string]: { wins: number; losses: number; overall: string } }) => {
     const teamArray = Object.entries(teams).map(([teamName, stats]) => {
       const wins = Number(stats.wins) || 0;
       const losses = Number(stats.losses) || 0;
@@ -525,7 +538,7 @@ const Admin = () => {
         // If inputs don't exist, create default values
         setTeamStatsInputs(prev => ({
           ...prev,
-          [teamName]: { wins: 0, losses: 0 }
+          [teamName]: { wins: 0, losses: 0, overall: '0-0' }
         }));
         return;
       }
@@ -540,6 +553,7 @@ const Admin = () => {
         division: selectedDivision,
         wins: wins,
         losses: losses,
+        overall: inputs.overall || `${wins}-${losses}`,
         winPercentage: 0, // Will be calculated in the service
         season: '2024-25'
       };
@@ -645,6 +659,7 @@ const Admin = () => {
           division: selectedDivision,
           wins: update.wins,
           losses: update.losses,
+          overall: `${update.wins}-${update.losses}`,
           winPercentage: 0,
           season: '2024-25'
         };
@@ -671,6 +686,11 @@ const Admin = () => {
     setEditingGame(null);
     setScoreInputs({ home: {}, away: {} });
     setGameNotes('');
+    setDetailedGameNotes({
+      homeTeamNotes: '',
+      awayTeamNotes: '',
+      generalNotes: ''
+    });
   };
 
   // Load schedules for a school and sport
@@ -728,6 +748,13 @@ const Admin = () => {
     // Initialize notes with existing notes or empty string
     setGameNotes(game.notes || '');
     
+    // Initialize detailed game notes
+    setDetailedGameNotes({
+      homeTeamNotes: game.gameNotes?.homeTeamNotes || '',
+      awayTeamNotes: game.gameNotes?.awayTeamNotes || '',
+      generalNotes: game.gameNotes?.generalNotes || ''
+    });
+    
     setShowEditModal(true);
   };
 
@@ -740,6 +767,7 @@ const Admin = () => {
         ...editingGame,
         score: scoreInputs,
         notes: gameNotes,
+        gameNotes: detailedGameNotes,
         status: scoreInputs.home.final && scoreInputs.away.final ? 'FINAL' : 'UPCOMING'
       };
       
@@ -764,6 +792,11 @@ const Admin = () => {
       setEditingSport('');
       setScoreInputs({ home: {}, away: {} });
       setGameNotes('');
+      setDetailedGameNotes({
+        homeTeamNotes: '',
+        awayTeamNotes: '',
+        generalNotes: ''
+      });
       
       alert('Scores and notes updated successfully!');
     } catch (error) {
@@ -830,6 +863,12 @@ const Admin = () => {
             onClick={() => setActiveTab('addStats')}
           >
             Add Stats
+          </button>
+          <button
+            className={`w-full px-6 py-3 rounded-lg font-semibold text-lg transition-colors text-left ${activeTab === 'featuredScores' ? 'bg-primary-500 text-white' : 'bg-white text-primary-700 border border-primary-200 hover:bg-primary-100'}`}
+            onClick={() => setActiveTab('featuredScores')}
+          >
+            Featured Scores
           </button>
           
           {/* Sample Data Button */}
@@ -1401,6 +1440,7 @@ const Admin = () => {
                             <th className="px-4 py-3 text-left text-green-800 font-bold">Team</th>
                             <th className="px-4 py-3 text-center text-green-800 font-bold">Wins</th>
                             <th className="px-4 py-3 text-center text-green-800 font-bold">Losses</th>
+                            <th className="px-4 py-3 text-center text-green-800 font-bold">Overall</th>
                             <th className="px-4 py-3 text-center text-green-800 font-bold">Win %</th>
                             <th className="px-4 py-3 text-center text-green-800 font-bold">Actions</th>
                           </tr>
@@ -1408,14 +1448,14 @@ const Admin = () => {
                         <tbody>
                           {statsLoading ? (
                             <tr>
-                              <td colSpan={6} className="px-4 py-8 text-center">
+                              <td colSpan={7} className="px-4 py-8 text-center">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
                                 Loading stats...
                               </td>
                             </tr>
                           ) : rankedTeams.length > 0 ? (
                             rankedTeams.map((team) => {
-                              const inputs = teamStatsInputs[team.teamName] || { wins: 0, losses: 0 };
+                              const inputs = teamStatsInputs[team.teamName] || { wins: 0, losses: 0, overall: '0-0' };
                               
                               return (
                                 <tr key={team.teamName} className="border-b border-green-100 hover:bg-green-50 transition-colors">
@@ -1455,6 +1495,19 @@ const Admin = () => {
                                       }}
                                     />
                                   </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <input
+                                      key={`${team.teamName}-overall-${inputs.overall || ''}`}
+                                      type="text"
+                                      placeholder="0-0"
+                                      className="w-20 text-center border border-orange-200 rounded px-2 py-1 text-orange-600 font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                      value={inputs.overall || ''}
+                                      onChange={(e) => {
+                                        console.log('Overall input changed for', team.teamName, 'to', e.target.value);
+                                        handleStatsInputChange(team.teamName, 'overall', e.target.value);
+                                      }}
+                                    />
+                                  </td>
                                   <td className="px-4 py-3 text-center text-green-700 font-bold">
                                     {(team.winPercentage * 100).toFixed(1)}%
                                   </td>
@@ -1474,7 +1527,7 @@ const Admin = () => {
                             (() => {
                               const teams = (teamData as any)[selectedSport]?.[selectedDivision] || [];
                               return teams.map((teamName: string, index: number) => {
-                                const inputs = teamStatsInputs[teamName] || { wins: 0, losses: 0 };
+                                const inputs = teamStatsInputs[teamName] || { wins: 0, losses: 0, overall: '0-0' };
                                 const totalGames = inputs.wins + inputs.losses;
                                 const winPercentage = totalGames > 0 ? inputs.wins / totalGames : 0;
                                 
@@ -1518,6 +1571,19 @@ const Admin = () => {
                                        }}
                                      />
                                    </td>
+                                   <td className="px-4 py-3 text-center">
+                                     <input
+                                       key={`${teamName}-overall-${inputs.overall || ''}`}
+                                       type="text"
+                                       placeholder="0-0"
+                                       className="w-20 text-center border border-orange-200 rounded px-2 py-1 text-orange-600 font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                       value={inputs.overall || ''}
+                                       onChange={(e) => {
+                                         console.log('Overall input changed for', teamName, 'to', e.target.value);
+                                         handleStatsInputChange(teamName, 'overall', e.target.value);
+                                       }}
+                                     />
+                                   </td>
                                     <td className="px-4 py-3 text-center text-green-700 font-bold">
                                       {(winPercentage * 100).toFixed(1)}%
                                     </td>
@@ -1558,6 +1624,123 @@ const Admin = () => {
                   )}
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === 'featuredScores' && (
+            <div className="w-full max-w-6xl">
+              <h2 className="text-2xl font-bold text-primary-700 mb-6">Manage Featured Scores</h2>
+              
+              {/* Featured Scores Management */}
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-primary-700">Featured Scores</h3>
+                    <p className="text-sm text-gray-600">Manage which games appear in the Scores section on the homepage</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // TODO: Add functionality to load available games
+                      setFeaturedScoresLoading(true);
+                      // Load games with scores from all schools
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Load Available Games
+                  </button>
+                </div>
+
+                {/* Current Featured Scores */}
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-primary-700 mb-3">Current Featured Scores</h4>
+                  {featuredScores.length > 0 ? (
+                    <div className="space-y-3">
+                      {featuredScores.map((score, index) => (
+                        <div key={score.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-800">
+                                  {score.schoolName} vs {score.opponent}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {score.homeScore} - {score.awayScore} • {new Date(score.date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  // TODO: Add edit functionality
+                                }}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // TODO: Add delete functionality
+                                }}
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">No featured scores selected yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">Click "Load Available Games" to see games you can feature.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Available Games */}
+                {availableGames.length > 0 && (
+                  <div>
+                    <h4 className="text-md font-semibold text-primary-700 mb-3">Available Games to Feature</h4>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {availableGames.map((game) => (
+                        <div key={game.id} className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-gray-800">
+                                {game.schoolName} vs {game.opponent}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {game.score?.home?.final || 0} - {game.score?.away?.final || 0} • {new Date(game.time).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                // TODO: Add to featured scores
+                              }}
+                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                            >
+                              Add to Featured
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {featuredScoresLoading && (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                    <p className="text-sm text-gray-600 mt-2">Loading available games...</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1653,17 +1836,75 @@ const Admin = () => {
                  {/* Game Notes Section */}
                  <div className="border-t pt-4">
                    <h3 className="text-lg font-semibold text-primary-700 mb-4">Game Notes</h3>
-                   <div>
+                   
+                   {/* General Notes */}
+                   <div className="mb-4">
                      <label className="block text-sm font-medium text-primary-700 mb-2">
-                       Additional Notes (Optional)
+                       General Game Notes (Optional)
                      </label>
                      <textarea
                        value={gameNotes}
                        onChange={(e) => setGameNotes(e.target.value)}
-                       placeholder="Enter any notes about the game (e.g., weather conditions, key plays, injuries, etc.)"
-                       rows={4}
+                       placeholder="Enter general notes about the game (e.g., weather conditions, key plays, injuries, etc.)"
+                       rows={3}
                        className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                      />
+                   </div>
+
+                   {/* Detailed Game Notes */}
+                   <div className="space-y-4">
+                     <h4 className="text-md font-semibold text-primary-600">Detailed Team Notes</h4>
+                     
+                     {/* Home Team Notes */}
+                     <div>
+                       <label className="block text-sm font-medium text-primary-700 mb-2">
+                         Home Team Notes (Optional)
+                       </label>
+                       <textarea
+                         value={detailedGameNotes.homeTeamNotes}
+                         onChange={(e) => setDetailedGameNotes(prev => ({
+                           ...prev,
+                           homeTeamNotes: e.target.value
+                         }))}
+                         placeholder="Enter notes specific to the home team performance, key players, etc."
+                         rows={3}
+                         className="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                       />
+                     </div>
+
+                     {/* Away Team Notes */}
+                     <div>
+                       <label className="block text-sm font-medium text-primary-700 mb-2">
+                         Away Team Notes (Optional)
+                       </label>
+                       <textarea
+                         value={detailedGameNotes.awayTeamNotes}
+                         onChange={(e) => setDetailedGameNotes(prev => ({
+                           ...prev,
+                           awayTeamNotes: e.target.value
+                         }))}
+                         placeholder="Enter notes specific to the away team performance, key players, etc."
+                         rows={3}
+                         className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                       />
+                     </div>
+
+                     {/* Additional General Notes */}
+                     <div>
+                       <label className="block text-sm font-medium text-primary-700 mb-2">
+                         Additional General Notes (Optional)
+                       </label>
+                       <textarea
+                         value={detailedGameNotes.generalNotes}
+                         onChange={(e) => setDetailedGameNotes(prev => ({
+                           ...prev,
+                           generalNotes: e.target.value
+                         }))}
+                         placeholder="Enter any additional general notes about the game"
+                         rows={3}
+                         className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 resize-none"
+                       />
+                     </div>
                    </div>
                  </div>
                 

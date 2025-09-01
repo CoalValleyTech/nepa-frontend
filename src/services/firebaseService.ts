@@ -41,6 +41,11 @@ export interface ScheduleEntry {
   score?: any;
   url?: string;
   notes?: string;
+  gameNotes?: {
+    homeTeamNotes?: string;
+    awayTeamNotes?: string;
+    generalNotes?: string;
+  };
 }
 
 export interface Article {
@@ -764,8 +769,24 @@ export interface TeamStats {
   division: string;
   wins: number;
   losses: number;
+  overall: string; // Format: "0-0"
   winPercentage: number;
   season?: string;
+  updatedAt?: any;
+}
+
+export interface FeaturedScore {
+  id?: string;
+  gameId: string;
+  schoolName: string;
+  opponent: string;
+  homeScore: number;
+  awayScore: number;
+  date: string;
+  location: string;
+  status: string;
+  order: number;
+  createdAt?: any;
   updatedAt?: any;
 }
 
@@ -811,6 +832,7 @@ export const updateTeamStats = async (teamStats: TeamStats): Promise<void> => {
           
           const statsData = {
             ...teamStats,
+            overall: teamStats.overall || `${teamStats.wins}-${teamStats.losses}`, // Default to wins-losses format
             winPercentage,
             season,
             updatedAt: serverTimestamp(),
@@ -930,5 +952,70 @@ export const getTeamStats = async (teamName: string, sport: string, division: st
   } catch (error: any) {
     console.error('Error getting team stats:', error);
     throw new Error(`Failed to get team stats: ${error.message}`);
+  }
+};
+
+// Featured Scores Collection
+const FEATURED_SCORES_COLLECTION = 'featuredScores';
+
+// Add a game to featured scores
+export const addFeaturedScore = async (featuredScore: Omit<FeaturedScore, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, FEATURED_SCORES_COLLECTION), {
+      ...featuredScore,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (error: any) {
+    console.error('Error adding featured score:', error);
+    throw new Error(`Failed to add featured score: ${error.message}`);
+  }
+};
+
+// Get all featured scores
+export const getFeaturedScores = async (): Promise<FeaturedScore[]> => {
+  try {
+    const q = query(
+      collection(db, FEATURED_SCORES_COLLECTION),
+      orderBy('order', 'asc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const featuredScores: FeaturedScore[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      featuredScores.push({ id: doc.id, ...doc.data() } as FeaturedScore & { id: string });
+    });
+    
+    return featuredScores;
+  } catch (error: any) {
+    console.error('Error getting featured scores:', error);
+    throw new Error(`Failed to get featured scores: ${error.message}`);
+  }
+};
+
+// Update featured score
+export const updateFeaturedScore = async (id: string, updates: Partial<FeaturedScore>): Promise<void> => {
+  try {
+    const docRef = doc(db, FEATURED_SCORES_COLLECTION, id);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error: any) {
+    console.error('Error updating featured score:', error);
+    throw new Error(`Failed to update featured score: ${error.message}`);
+  }
+};
+
+// Delete featured score
+export const deleteFeaturedScore = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, FEATURED_SCORES_COLLECTION, id);
+    await deleteDoc(docRef);
+  } catch (error: any) {
+    console.error('Error deleting featured score:', error);
+    throw new Error(`Failed to delete featured score: ${error.message}`);
   }
 }; 

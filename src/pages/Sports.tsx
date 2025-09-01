@@ -423,6 +423,7 @@ const Sports = () => {
                         <th className="px-2 sm:px-3 py-2 text-left text-white font-bold uppercase bg-primary-500 text-xs">Team</th>
                         <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Wins</th>
                         <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Losses</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Overall</th>
                         <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Win %</th>
                       </tr>
                     </thead>
@@ -431,6 +432,7 @@ const Sports = () => {
                         const teamStats = division.statsMap[team];
                         const wins = teamStats?.wins || 0;
                         const losses = teamStats?.losses || 0;
+                        const overall = teamStats?.overall || `${wins}-${losses}`;
                         const winPercent = teamStats?.winPercentage || 0;
                         
                         return (
@@ -444,6 +446,7 @@ const Sports = () => {
                             <td className="px-2 sm:px-3 py-2 font-semibold text-green-900 whitespace-nowrap text-xs">{team}</td>
                             <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{wins}</td>
                             <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{losses}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{overall}</td>
                             <td className="px-2 sm:px-3 py-2 text-center text-green-700 font-bold text-xs">{winPercent.toFixed(3)}</td>
                           </tr>
                         );

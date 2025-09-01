@@ -19,6 +19,11 @@ interface ScheduleEntry {
     };
   };
   notes?: string;
+  gameNotes?: {
+    homeTeamNotes?: string;
+    awayTeamNotes?: string;
+    generalNotes?: string;
+  };
 }
 interface School extends BaseSchool {
   schedules?: {
@@ -73,6 +78,28 @@ const formatSportName = (sport: string): string => {
   return sportNameMap[sport] || sport.charAt(0).toUpperCase() + sport.slice(1);
 };
 
+// Helper function to calculate overall record for a sport
+const calculateOverallRecord = (games: ScheduleEntry[]): { wins: number; losses: number; ties: number; record: string } => {
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+
+  games.forEach(game => {
+    if (game.status === 'FINAL' && game.score?.home?.final !== undefined && game.score?.away?.final !== undefined) {
+      if (game.score.home.final > game.score.away.final) {
+        wins++;
+      } else if (game.score.home.final < game.score.away.final) {
+        losses++;
+      } else {
+        ties++;
+      }
+    }
+  });
+
+  const record = `${wins}-${losses}${ties > 0 ? `-${ties}` : ''}`;
+  return { wins, losses, ties, record };
+};
+
 const SchoolPage = () => {
   const { id } = useParams<{ id: string }>();
   const [school, setSchool] = useState<School | null>(null);
@@ -80,6 +107,8 @@ const SchoolPage = () => {
   const [error, setError] = useState('');
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [allSchools, setAllSchools] = useState<any[]>([]);
+  const [selectedGame, setSelectedGame] = useState<ScheduleEntry | null>(null);
+  const [showGameNotesModal, setShowGameNotesModal] = useState(false);
 
   useEffect(() => {
     const fetchSchool = async () => {
@@ -184,9 +213,41 @@ const SchoolPage = () => {
                 ) : (
                   /* Selected Sport with Side-by-Side Schedule and Roster */
                   <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-2xl font-semibold text-primary-600 mb-6 break-words leading-tight">
-                      {formatSportName(selectedSport)}
-                    </h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                      <h2 className="text-2xl font-semibold text-primary-600 break-words leading-tight">
+                        {formatSportName(selectedSport)}
+                      </h2>
+                      {school.schedules && school.schedules[selectedSport] && school.schedules[selectedSport].length > 0 && (
+                        (() => {
+                          const record = calculateOverallRecord(school.schedules[selectedSport]);
+                          return record.wins > 0 || record.losses > 0 || record.ties > 0 ? (
+                            <div className="mt-2 sm:mt-0">
+                              <div className="text-sm text-gray-600 mb-1">Overall Record</div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg font-bold text-primary-700">{record.record}</span>
+                                <div className="flex gap-1 text-xs">
+                                  {record.wins > 0 && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                                      {record.wins}W
+                                    </span>
+                                  )}
+                                  {record.losses > 0 && (
+                                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full">
+                                      {record.losses}L
+                                    </span>
+                                  )}
+                                  {record.ties > 0 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
+                                      {record.ties}T
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null;
+                        })()
+                      )}
+                    </div>
                     
                     {/* 2x2 Grid Layout for Schedule, Roster, Stats, and News */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -198,10 +259,20 @@ const SchoolPage = () => {
                         
                         {school.schedules && school.schedules[selectedSport] && school.schedules[selectedSport].length > 0 ? (
                           <div className="space-y-4 max-h-96 overflow-y-auto">
-                            {school.schedules[selectedSport]
-                              .slice()
-                              .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-                              .map((game, idx) => {
+                            {(() => {
+                              // Remove duplicates and sort games
+                              const uniqueGames = school.schedules[selectedSport]
+                                .slice()
+                                .filter((game, index, self) => 
+                                  index === self.findIndex(g => 
+                                    g.time === game.time && 
+                                    g.opponent === game.opponent && 
+                                    g.location === game.location
+                                  )
+                                )
+                                .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+                              
+                              return uniqueGames.map((game, idx) => {
                                 // Find opponent school (if exists)
                                 const opponentSchool = allSchools.find((s: any) => s.name === game.opponent);
                                 const opponentLogo = opponentSchool?.logoUrl || sportIcons[selectedSport] || '/default-football-helmet.png';
@@ -254,6 +325,19 @@ const SchoolPage = () => {
                                                 {game.status}
                                               </span>
                                             )}
+                                            {/* Win/Loss Indicator */}
+                                            {game.status === 'FINAL' && game.score.home?.final !== undefined && game.score.away?.final !== undefined && (
+                                              <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                                                game.score.home.final > game.score.away.final 
+                                                  ? 'bg-green-100 text-green-800' 
+                                                  : game.score.home.final < game.score.away.final 
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-gray-100 text-gray-800'
+                                              }`}>
+                                                {game.score.home.final > game.score.away.final ? 'W' : 
+                                                 game.score.home.final < game.score.away.final ? 'L' : 'T'}
+                                              </span>
+                                            )}
                                           </div>
                                           {/* Period Scores */}
                                           {game.score?.home && game.score?.away && (
@@ -274,16 +358,22 @@ const SchoolPage = () => {
                                       )}
                                     </div>
                                     
-                                    {/* Game Notes Display */}
-                                    {game.notes && (
-                                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <div className="text-xs text-blue-700 font-semibold mb-1">Game Notes:</div>
-                                        <div className="text-sm text-blue-800">{game.notes}</div>
-                                      </div>
-                                    )}
+                                    {/* Game Notes Button */}
+                                    <div className="mt-3 flex justify-end">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedGame(game);
+                                          setShowGameNotesModal(true);
+                                        }}
+                                        className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                                      >
+                                        Game Notes
+                                      </button>
+                                    </div>
                                   </div>
                                 );
-                              })}
+                              });
+                            })()}
                           </div>
                         ) : (
                           <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
@@ -384,6 +474,190 @@ const SchoolPage = () => {
           </div>
         ) : null}
       </div>
+
+      {/* Game Notes Modal */}
+      {showGameNotesModal && selectedGame && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-primary-700">Game Notes & Box Score</h3>
+                <button
+                  onClick={() => setShowGameNotesModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Game Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    {school?.logoUrl && (
+                      <img src={school.logoUrl} alt={school.name + ' logo'} className="h-12 w-12 object-contain rounded" />
+                    )}
+                    <span className="font-bold text-lg text-primary-800">{school?.name}</span>
+                    <span className="text-primary-600 font-semibold">vs</span>
+                    <span className="font-bold text-lg text-primary-800">{selectedGame.opponent}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-600">
+                      {selectedGame.time ? new Date(selectedGame.time).toLocaleDateString() : ''}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {selectedGame.time ? new Date(selectedGame.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </div>
+                    <div className="text-sm text-gray-600">📍 {selectedGame.location}</div>
+                  </div>
+                </div>
+                
+                {/* Final Score */}
+                {selectedGame.score && (selectedGame.score.home?.final || selectedGame.score.away?.final) && (
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary-700 mb-2">
+                      {selectedGame.score.home?.final ?? '-'} - {selectedGame.score.away?.final ?? '-'}
+                    </div>
+                    {selectedGame.status && (
+                      <span className={`text-sm px-3 py-1 rounded-full ${
+                        selectedGame.status === 'FINAL' ? 'bg-green-100 text-green-700' :
+                        selectedGame.status === 'LIVE' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {selectedGame.status}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Box Score */}
+              {selectedGame.score && (selectedGame.score.home || selectedGame.score.away) && (
+                <div className="mb-6">
+                  <h4 className="text-xl font-semibold text-primary-600 mb-4">Box Score</h4>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="grid grid-cols-3 gap-0">
+                      {/* Header */}
+                      <div className="bg-primary-100 px-4 py-3 font-semibold text-primary-800 text-center">Period</div>
+                      <div className="bg-primary-100 px-4 py-3 font-semibold text-primary-800 text-center">{school?.name}</div>
+                      <div className="bg-primary-100 px-4 py-3 font-semibold text-primary-800 text-center">{selectedGame.opponent}</div>
+                      
+                      {/* Period Scores */}
+                      {['1', '2', '3', '4'].map(period => (
+                        <>
+                          <div className="px-4 py-3 bg-gray-50 font-medium text-center border-b border-gray-200">
+                            {period}
+                          </div>
+                          <div className="px-4 py-3 text-center border-b border-gray-200">
+                            {selectedGame.score?.home?.[period] || '-'}
+                          </div>
+                          <div className="px-4 py-3 text-center border-b border-gray-200">
+                            {selectedGame.score?.away?.[period] || '-'}
+                          </div>
+                        </>
+                      ))}
+                      
+                      {/* Overtime */}
+                      {selectedGame.score?.home?.OT && selectedGame.score?.away?.OT && (
+                        <>
+                          <div className="px-4 py-3 bg-orange-50 font-medium text-center border-b border-gray-200 text-orange-700">
+                            OT
+                          </div>
+                          <div className="px-4 py-3 text-center border-b border-gray-200 text-orange-700">
+                            {selectedGame.score.home.OT}
+                          </div>
+                          <div className="px-4 py-3 text-center border-b border-gray-200 text-orange-700">
+                            {selectedGame.score.away.OT}
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Final Score */}
+                      <div className="px-4 py-3 bg-primary-50 font-bold text-center">
+                        Final
+                      </div>
+                      <div className="px-4 py-3 bg-primary-50 font-bold text-center text-primary-700">
+                        {selectedGame.score?.home?.final || '-'}
+                      </div>
+                      <div className="px-4 py-3 bg-primary-50 font-bold text-center text-primary-700">
+                        {selectedGame.score?.away?.final || '-'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Game Notes */}
+              <div className="mb-6">
+                <h4 className="text-xl font-semibold text-primary-600 mb-4">Game Notes</h4>
+                
+                {/* General Notes */}
+                {selectedGame.notes && (
+                  <div className="mb-4">
+                    <h5 className="text-lg font-medium text-primary-700 mb-2">General Notes</h5>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="text-sm text-blue-800 whitespace-pre-wrap">{selectedGame.notes}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Detailed Game Notes */}
+                {selectedGame.gameNotes && (
+                  <div className="space-y-4">
+                    {/* Home Team Notes */}
+                    {selectedGame.gameNotes.homeTeamNotes && (
+                      <div>
+                        <h5 className="text-lg font-medium text-primary-700 mb-2">{school?.name} Notes</h5>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="text-sm text-green-800 whitespace-pre-wrap">{selectedGame.gameNotes.homeTeamNotes}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Away Team Notes */}
+                    {selectedGame.gameNotes.awayTeamNotes && (
+                      <div>
+                        <h5 className="text-lg font-medium text-primary-700 mb-2">{selectedGame.opponent} Notes</h5>
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                          <div className="text-sm text-purple-800 whitespace-pre-wrap">{selectedGame.gameNotes.awayTeamNotes}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Additional General Notes */}
+                    {selectedGame.gameNotes.generalNotes && (
+                      <div>
+                        <h5 className="text-lg font-medium text-primary-700 mb-2">Additional Notes</h5>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <div className="text-sm text-gray-800 whitespace-pre-wrap">{selectedGame.gameNotes.generalNotes}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* No Notes Available */}
+                {!selectedGame.notes && !selectedGame.gameNotes && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                    <div className="text-gray-500">No game notes available for this game.</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowGameNotesModal(false)}
+                  className="px-6 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
