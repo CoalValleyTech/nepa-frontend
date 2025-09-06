@@ -7,7 +7,7 @@ import AdminAddSport from './AdminAddSport';
 import AdminAddSchedule from './AdminAddSchedule';
 import AdminAddGame from './AdminAddGame';
 import AdminAddRoster from './AdminAddRoster';
-import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats, getScheduleForSchool, updateScheduleWithScores } from '../services/firebaseService';
+import { getSchools, getArticles, addArticle, deleteArticle, School, Article, updateTeamStats, getTeamStats, TeamStats, getScheduleForSchool, updateScheduleWithScores, getGlobalSchedules, addFeaturedScore, getFeaturedScores, deleteFeaturedScore } from '../services/firebaseService';
 import { initializeSampleData } from '../initSampleData';
 
 const Admin = () => {
@@ -52,7 +52,8 @@ const Admin = () => {
 
   // Featured Scores states
   const [featuredScores, setFeaturedScores] = useState<any[]>([]);
-  const [featuredScoresLoading, setFeaturedScoresLoading] = useState(false);
+  const [availableGames, setAvailableGames] = useState<any[]>([]);
+  const [availableGamesLoading, setAvailableGamesLoading] = useState(false);
 
   // Article form state
   const [articleForm, setArticleForm] = useState({
@@ -199,6 +200,13 @@ const Admin = () => {
   useEffect(() => {
     if (user) {
       loadArticles();
+    }
+  }, [user]);
+
+  // Load featured scores effect
+  useEffect(() => {
+    if (user) {
+      loadFeaturedScores();
     }
   }, [user]);
 
@@ -350,6 +358,83 @@ const Admin = () => {
       setArticles(articlesData);
     } catch (error) {
       console.error('Error loading articles:', error);
+    }
+  };
+
+  // Load available games for featuring
+  const loadAvailableGames = async () => {
+    setAvailableGamesLoading(true);
+    try {
+      const allGames = await getGlobalSchedules();
+      console.log('All games loaded:', allGames);
+      console.log('Total games found:', allGames.length);
+      
+      if (allGames.length === 0) {
+        console.log('No games found in schedules collection');
+        setAvailableGames([]);
+        return;
+      }
+      
+      // Filter games that have scores (completed games)
+      const gamesWithScores = allGames.filter((game: any) => {
+        const hasScore = game.score && 
+          (game.score.home?.final !== undefined || game.score.away?.final !== undefined);
+        console.log('Game:', game.id, 'Status:', game.status, 'Has score:', hasScore, 'Score:', game.score);
+        return (game.status === 'LIVE' || game.status === 'FINAL') && hasScore;
+      });
+      
+      console.log('Games with scores:', gamesWithScores);
+      console.log('Games with scores count:', gamesWithScores.length);
+      setAvailableGames(gamesWithScores);
+    } catch (error) {
+      console.error('Error loading available games:', error);
+    } finally {
+      setAvailableGamesLoading(false);
+    }
+  };
+
+  // Load current featured scores
+  const loadFeaturedScores = async () => {
+    try {
+      const featuredData = await getFeaturedScores();
+      setFeaturedScores(featuredData);
+    } catch (error) {
+      console.error('Error loading featured scores:', error);
+    }
+  };
+
+  // Add game to featured scores
+  const addToFeaturedScores = async (game: any) => {
+    try {
+      const homeTeamName = game.schoolName || schools.find(s => s.id === game.schoolId)?.name || 'Unknown Team';
+      const awayTeamName = game.opponent || 'Unknown Team';
+      
+      await addFeaturedScore({
+        gameId: game.id,
+        schoolName: homeTeamName,
+        opponent: awayTeamName,
+        homeScore: game.score?.home?.final || 0,
+        awayScore: game.score?.away?.final || 0,
+        date: game.time,
+        location: game.location,
+        status: game.status || 'LIVE',
+        order: featuredScores.length + 1
+      });
+      
+      // Reload featured scores
+      await loadFeaturedScores();
+    } catch (error) {
+      console.error('Error adding to featured scores:', error);
+    }
+  };
+
+  // Remove game from featured scores
+  const removeFromFeaturedScores = async (featuredScoreId: string) => {
+    try {
+      await deleteFeaturedScore(featuredScoreId);
+      await loadFeaturedScores();
+    } catch (error) {
+      console.error('Error removing from featured scores:', error);
     }
   };
 
@@ -1637,17 +1722,9 @@ const Admin = () => {
                     <p className="text-sm text-gray-600">Manage which games appear in the Scores section on the homepage</p>
                   </div>
                   <button
-                    onClick={() => {
-                      // TODO: Add functionality to load available games
-                      setFeaturedScoresLoading(true);
-                      // Load games with scores from all schools
-                      // Temporary placeholder to satisfy TypeScript
-                      setTimeout(() => {
-                        setFeaturedScores([]);
-                        setFeaturedScoresLoading(false);
-                      }, 1000);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    onClick={loadAvailableGames}
+                    disabled={availableGamesLoading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1687,9 +1764,7 @@ const Admin = () => {
                                 Edit
                               </button>
                               <button
-                                onClick={() => {
-                                  // TODO: Add delete functionality
-                                }}
+                                onClick={() => removeFromFeaturedScores(score.id)}
                                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
                               >
                                 Remove
@@ -1708,14 +1783,62 @@ const Admin = () => {
                 </div>
 
                 {/* Available Games */}
-                <div className="text-center py-4">
-                  <p className="text-sm text-gray-600">Available games functionality coming soon...</p>
-                </div>
+                {availableGames.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-md font-semibold text-primary-700 mb-3">Available Games to Feature</h4>
+                    <div className="space-y-3">
+                      {availableGames.map((game) => {
+                        const homeTeamName = game.schoolName || schools.find(s => s.id === game.schoolId)?.name || 'Unknown Team';
+                        const awayTeamName = game.opponent || 'Unknown Team';
+                        const isAlreadyFeatured = featuredScores.some(fs => fs.gameId === game.id);
+                        
+                        return (
+                          <div key={game.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <div className="font-semibold text-gray-900">
+                                    {homeTeamName} vs {awayTeamName}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {game.sport} • {game.location} • {game.time}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-lg font-bold text-primary-700">
+                                  {game.score?.home?.final || 0} - {game.score?.away?.final || 0}
+                                </div>
+                                <button
+                                  onClick={() => addToFeaturedScores(game)}
+                                  disabled={isAlreadyFeatured}
+                                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                                    isAlreadyFeatured 
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                      : 'bg-green-600 hover:bg-green-700 text-white'
+                                  }`}
+                                >
+                                  {isAlreadyFeatured ? 'Already Featured' : 'Feature'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-                {featuredScoresLoading && (
+                {availableGamesLoading && (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-sm text-gray-600 mt-2">Loading available games...</p>
+                  </div>
+                )}
+
+                {!availableGamesLoading && availableGames.length === 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-600">No games with scores available to feature.</p>
                   </div>
                 )}
               </div>

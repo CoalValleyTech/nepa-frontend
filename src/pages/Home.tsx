@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSchools, getArticles, getStatsForSport } from '../services/firebaseService';
+import { getSchools, getArticles, getStatsForSport, getGlobalSchedules } from '../services/firebaseService';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -8,6 +8,10 @@ export default function Home() {
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<any>(null);
   const [schools, setSchools] = useState<any[]>([]);
+  
+  // Final Games state
+  const [finalGames, setFinalGames] = useState<any[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(false);
   
   // Divisional Leaders state
   const [divisionalLeaders, setDivisionalLeaders] = useState<any[]>([]);
@@ -74,13 +78,16 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
     loadData();
   }, []);
 
-  // Load schools
+  // Load schools and final games
   useEffect(() => {
     const loadData = async () => {
       try {
         // Load schools
         const schoolsData = await getSchools();
         setSchools(schoolsData);
+        
+        // Load final games
+        await loadFinalGames();
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -88,6 +95,36 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
 
     loadData();
   }, []);
+
+  // Load final games with scores
+  const loadFinalGames = async () => {
+    setGamesLoading(true);
+    try {
+      const allGames = await getGlobalSchedules();
+      
+      // Filter for final games with scores
+      const finalGamesWithScores = allGames.filter((game: any) => {
+        const hasScore = game.score && 
+          (game.score.home?.final !== undefined || game.score.away?.final !== undefined);
+        return game.status === 'FINAL' && hasScore;
+      });
+      
+      // Sort by time (most recent first)
+      finalGamesWithScores.sort((a: any, b: any) => {
+        const timeA = new Date(a.time).getTime();
+        const timeB = new Date(b.time).getTime();
+        return timeB - timeA;
+      });
+      
+      // Limit to 10 most recent games
+      setFinalGames(finalGamesWithScores.slice(0, 10));
+    } catch (error) {
+      console.error('Error loading final games:', error);
+      setFinalGames([]);
+    } finally {
+      setGamesLoading(false);
+    }
+  };
 
   // Check available sports when schools are loaded
   useEffect(() => {
@@ -174,6 +211,15 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
       return () => clearInterval(interval);
     }
   }, [currentSportIndex, availableSports]);
+
+  // Auto-refresh final games every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadFinalGames();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -290,9 +336,77 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
               <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:w-auto">
                 {/* Scores Section */}
                 <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-                  <h2 className="text-2xl font-bold text-primary-500 mb-6 text-center">Scores</h2>
-                  <div className="space-y-3 max-h-96 overflow-y-auto text-center text-primary-400 font-semibold">
-                    <p>Check back soon!</p>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-primary-500">Scores</h2>
+                    <button
+                      onClick={loadFinalGames}
+                      disabled={gamesLoading}
+                      className="text-primary-500 hover:text-primary-600 disabled:text-primary-300 transition-colors"
+                      title="Refresh scores"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {gamesLoading ? (
+                      <div className="text-center text-primary-400 font-semibold">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-2"></div>
+                        <p>Loading scores...</p>
+                      </div>
+                    ) : finalGames.length > 0 ? (
+                      finalGames.map((game) => {
+                        const homeTeamName = game.schoolName || schools.find(s => s.id === game.schoolId)?.name || 'Unknown Team';
+                        const awayTeamName = game.opponent || 'Unknown Team';
+                        const homeScore = game.score?.home?.final ?? 0;
+                        const awayScore = game.score?.away?.final ?? 0;
+                        
+                        return (
+                          <div key={game.id} className="bg-white rounded-lg shadow p-4 border border-primary-100">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-primary-500 font-medium">
+                                {game.sport && game.sport.charAt(0).toUpperCase() + game.sport.slice(1)}
+                              </span>
+                              <span className="text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full">
+                                FINAL
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-primary-700 truncate max-w-[120px]">
+                                  {homeTeamName}
+                                </span>
+                                <span className="text-lg font-bold text-primary-600">
+                                  {homeScore}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-primary-700 truncate max-w-[120px]">
+                                  {awayTeamName}
+                                </span>
+                                <span className="text-lg font-bold text-primary-600">
+                                  {awayScore}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {game.location && (
+                              <div className="text-xs text-primary-400 mt-2 text-center">
+                                {game.location}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center text-primary-400 font-semibold">
+                        <p>No final scores available</p>
+                        <p className="text-sm mt-1">Check back after games are completed!</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                                 {/* Divisional Leaders Section */}
