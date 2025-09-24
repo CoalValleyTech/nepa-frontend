@@ -42,11 +42,11 @@ export default function Home() {
   
   // Default article if no articles exist
   const defaultArticle = {
-    title: 'Welcome to SPAN SportsHub',
+    title: 'Welcome to SpanSportsHub',
     date: 'July 7, 2025',
     category: 'Welcome',
-    excerpt: 'The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community... ',
-    content: `The Scranton Public Athletic Network was established in 2025 to provide student-athletes, families, coaches, and the community with the most accurate stats provided by the teams. We are committed to keeping our services free to allow for everyone to access our content. 
+    excerpt: 'SpanSportsHub - Home of NEPA Highschool Sports. Find your teams Game, Score, or schedule.',
+    content: `SpanSportsHub - Home of NEPA Highschool Sports. Find your teams Game, Score, or schedule. 
 On the website, you will be able to find all schools located in the Lackawanna Interscholastic Athletics Association and their respective teams. You will also find links to video and radio broadcasts, so you can watch or listen to your favorite teams on the go. You can also find us on Facebook and Instagram, where we will post information, recaps, and leaderboards about all your favorite teams! 
 Our current resources only allow us to cover Girls' Tennis and Football for the Fall 2025 Season. As we look to expand into more sports in the coming season, we will look for more opportunities to grow and expand our brand. Stay tuned in the following weeks and months as we announce more exciting things that have yet to come!
 `,
@@ -236,7 +236,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                       alt="SPAN Logo" 
                       className="w-48 h-48 object-contain mx-auto mb-4"
                     />
-                    <h2 className="text-3xl font-bold text-cream-100">Welcome to SPAN SPORTSHUB</h2>
+                    <h2 className="text-3xl font-bold text-cream-100">Welcome to SpanSportsHub</h2>
                   </div>
                   <button
                     onClick={() => setShowPopup(false)}
@@ -248,7 +248,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                 </div>
                 <div className="space-y-6 text-cream-100 text-lg">
                   <p>
-                    Welcome to SPAN Sports Hub! We provide statistics, scores, and more for all high schools part of the Lackawanna Interscholastic Athletics Association. Stay tuned as we enter the fall sports season, as we provide you with scores, stats, and leaderboards for all LIAA sports!
+                    Welcome to SpanSportsHub! We provide statistics, scores, and more for all high schools part of the Lackawanna Interscholastic Athletics Association. Stay tuned as we enter the fall sports season, as we provide you with scores, stats, and leaderboards for all LIAA sports!
                   </p>
                 </div>
                 <div className="mt-8 flex justify-end">
@@ -265,7 +265,7 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
         )}
 
         {/* Main Content Section with Scores and Schedule Sidebars */}
-        <section className="py-8 bg-cream-50">
+        <section className="py-8 bg-orange-100">
           <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
               {/* Left Side - Latest News and Article */}
@@ -474,6 +474,81 @@ Our current resources only allow us to cover Girls' Tennis and Football for the 
                     </div>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Around the Leagues Section */}
+        <section className="py-16 bg-cream-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-primary-700 text-center mb-12">Around the Leagues</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Football */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">🏈</div>
+                  <h3 className="text-lg font-bold text-primary-700">Football</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Soccer */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">⚽</div>
+                  <h3 className="text-lg font-bold text-primary-700">Soccer</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Volleyball */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">🏐</div>
+                  <h3 className="text-lg font-bold text-primary-700">Volleyball</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Golf */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">⛳</div>
+                  <h3 className="text-lg font-bold text-primary-700">Golf</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Cross Country */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">🏃‍♂️</div>
+                  <h3 className="text-lg font-bold text-primary-700">Cross Country</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Basketball */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">🏀</div>
+                  <h3 className="text-lg font-bold text-primary-700">Basketball</h3>
+                </div>
+                <div className="text-center py-8">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
               </div>
             </div>
           </div>

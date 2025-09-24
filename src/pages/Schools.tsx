@@ -48,7 +48,7 @@ const Schools = () => {
       <div className="flex flex-col items-center bg-cream-50 py-16 flex-1">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold text-primary-700 text-center mb-8">
-            District 2 Schools
+            Schools
           </h1>
           
           {loading ? (

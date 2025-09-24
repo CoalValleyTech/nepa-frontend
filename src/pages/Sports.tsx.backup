@@ -1,0 +1,1555 @@
+import { useState, useEffect } from 'react';
+import { getStatsForSport, TeamStats, getSchools, School } from '../services/firebaseService';
+
+interface PlayerStats {
+  id: number;
+  playerName: string;
+  teamName: string;
+  schoolName: string;
+  sport: string;
+  division: string;
+  season: string;
+  
+  // Football stats
+  passingYards?: number;
+  passingTouchdowns?: number;
+  rushingYards?: number;
+  rushingTouchdowns?: number;
+  receivingYards?: number;
+  receivingTouchdowns?: number;
+  tackles?: number;
+  interceptions?: number;
+  sacks?: number;
+  
+  // Basketball stats
+  points?: number;
+  rebounds?: number;
+  assists?: number;
+  steals?: number;
+  blocks?: number;
+  fieldGoalsMade?: number;
+  fieldGoalsAttempted?: number;
+  threePointersMade?: number;
+  threePointersAttempted?: number;
+  freeThrowsMade?: number;
+  freeThrowsAttempted?: number;
+  
+  // Baseball/Softball stats
+  battingAverage?: number;
+  hits?: number;
+  runs?: number;
+  rbis?: number;
+  homeRuns?: number;
+  stolenBases?: number;
+  inningsPitched?: number;
+  earnedRunAverage?: number;
+  strikeouts?: number;
+  wins?: number;
+  losses?: number;
+  
+  // Soccer stats
+  goals?: number;
+  assistsSoccer?: number;
+  saves?: number;
+  shutouts?: number;
+  
+  // General stats
+  gamesPlayed?: number;
+  minutesPlayed?: number;
+}
+
+const footballDivisions = [
+  {
+    name: 'Division 1',
+    teams: [
+      'Abington Heights Comets',
+      'Delaware Valley Warriors',
+      'North Pocono Trojans',
+      'Scranton Knights',
+      'Scranton Prep Cavaliers',
+      'Valley View Cougars',
+      'Wallenpaupack Buckhorns',
+    ],
+  },
+  {
+    name: 'Division 2',
+    teams: [
+      'Dunmore Bucks',
+      'Honesdale Hornets',
+      'Lakeland Chiefs',
+      'Mid Valley Spartans',
+      'West Scranton Invaders',
+      'Western Wayne Wildcats',
+    ],
+  },
+  {
+    name: 'Division 3',
+    teams: [
+      'Carbondale Area Chargers',
+      'Holy Cross Crusaders',
+      'Lackawanna Trail Lions',
+      'Old Forge Blue Devils',
+      'Riverside Vikings',
+      'Susquehanna Sabers',
+    ],
+  },
+];
+
+const golfDivisions = [
+  {
+    name: 'Division 1',
+    teams: [
+      'Scranton Prep',
+      'Abington Heights',
+      'Honesdale',
+      'North Pocono',
+      'Delaware Valley',
+      'Wallenpaupack',
+    ],
+  },
+  {
+    name: 'Division 2',
+    teams: [
+      'Lackawanna Trail',
+      'Riverside',
+      'Lakeland',
+      'Mid Valley',
+      'Dunmore',
+      'Western Wayne',
+      'Blue Ridge',
+      'Old Forge',
+      'Montrose',
+      'Holy Cross',
+      'Mt. View',
+      'West Scranton',
+      'Scranton',
+      'Elk Lake',
+      'Forest City',
+      'Carbondale',
+    ],
+  },
+];
+
+const boysSoccerDivisions = [
+  {
+    name: 'Division 1',
+    teams: [
+      'Abington Heights',
+      'Scranton Prep',
+      'North Pocono',
+      'Delaware Valley',
+      'Valley View',
+      'Honesdale',
+      'Scranton',
+      'Wallenpaupack',
+    ],
+  },
+  {
+    name: 'Division 2',
+    teams: [
+      'Dunmore',
+      'Lakeland',
+      'West Scranton',
+      'Mt. View',
+      'Western Wayne',
+      'Gregory the Great',
+      'Mid Valley',
+    ],
+  },
+  {
+    name: 'Division 3',
+    teams: [
+      'Old Forge',
+      'Riverside',
+      'Elk Lake',
+      'Blue Ridge',
+      'Holy Cross',
+      'Montrose',
+      'Forest City',
+      'Carbondale',
+    ],
+  },
+];
+
+const girlsSoccerDivisions = [
+  {
+    name: 'Division 1',
+    teams: [
+      'Abington Heights',
+      'Valley View',
+      'Mid Valley',
+      'Scranton Prep',
+      'Delaware Valley',
+      'North Pocono',
+      'Wallenpaupack',
+    ],
+  },
+  {
+    name: 'Division 2',
+    teams: [
+      'Honesdale',
+      'Mt. View',
+      'Montrose',
+      'Western Wayne',
+      'Elk Lake',
+      'Old Forge',
+      'Lakeland',
+      'Dunmore',
+      'Holy Cross',
+      'Forest City',
+      'Carbondale',
+      'Scranton',
+      'West Scranton',
+    ],
+  },
+];
+
+const boysCrossCountryClusters = [
+  {
+    name: 'Cluster 1',
+    teams: [
+      'Abington Heights',
+      'North Pocono',
+      'Valley View',
+    ],
+  },
+  {
+    name: 'Cluster 2',
+    teams: [
+      'Susquehanna',
+      'Mt. View',
+      'Forest City',
+    ],
+  },
+  {
+    name: 'Cluster 3',
+    teams: [
+      'Montrose',
+      'Blue Ridge',
+      'Elk Lake',
+    ],
+  },
+  {
+    name: 'Cluster 4',
+    teams: [
+      'Delaware Valley',
+      'Wallenpaupack',
+      'Honesdale',
+    ],
+  },
+  {
+    name: 'Cluster 5',
+    teams: [
+      'Scranton Prep',
+      'Holy Cross',
+      'Carbondale',
+    ],
+  },
+  {
+    name: 'Cluster 6',
+    teams: [
+      'Scranton',
+      'West Scranton',
+      'Mid Valley',
+    ],
+  },
+  {
+    name: 'Cluster 7',
+    teams: [
+      'Lakeland',
+      'Lack. Trail',
+      'Western Wayne',
+    ],
+  },
+  {
+    name: 'Cluster 8',
+    teams: [
+      'Dunmore',
+      'Riverside',
+      'Old Forge',
+    ],
+  },
+];
+
+const girlsCrossCountryClusters = [
+  {
+    name: 'Cluster 1',
+    teams: [
+      'Abington Heights',
+      'North Pocono',
+      'Valley View',
+    ],
+  },
+  {
+    name: 'Cluster 2',
+    teams: [
+      'Susquehanna',
+      'Mt. View',
+      'Forest City',
+    ],
+  },
+  {
+    name: 'Cluster 3',
+    teams: [
+      'Montrose',
+      'Blue Ridge',
+      'Elk Lake',
+    ],
+  },
+  {
+    name: 'Cluster 4',
+    teams: [
+      'Delaware Valley',
+      'Wallenpaupack',
+      'Honesdale',
+    ],
+  },
+  {
+    name: 'Cluster 5',
+    teams: [
+      'Scranton Prep',
+      'Holy Cross',
+      'Carbondale',
+    ],
+  },
+  {
+    name: 'Cluster 6',
+    teams: [
+      'Scranton',
+      'West Scranton',
+      'Mid Valley',
+    ],
+  },
+  {
+    name: 'Cluster 7',
+    teams: [
+      'Lakeland',
+      'Lack. Trail',
+      'Western Wayne',
+    ],
+  },
+  {
+    name: 'Cluster 8',
+    teams: [
+      'Dunmore',
+      'Riverside',
+      'Old Forge',
+    ],
+  },
+];
+
+const volleyballTeams = [
+  'North Pocono',
+  'Western Wayne',
+  'Mt. View',
+  'Abington Heights',
+  'Blue Ridge',
+  'Dunmore',
+  'Scranton',
+  'Montrose',
+  'Elk Lake',
+  'Valley View',
+  'Susquehanna',
+  'Lakeland',
+  'Lackawanna Trail',
+  'Forest City',
+  'West Scranton',
+  'Mid Valley',
+];
+
+const Sports = () => {
+  const [selectedSport, setSelectedSport] = useState<'football' | 'golf-boys' | 'golf-girls' | 'boys-soccer' | 'girls-soccer' | 'boys-cross-country' | 'girls-cross-country' | 'volleyball' | null>(null);
+
+  // Function to get sport display name
+  const getSportDisplayName = (sport: string | null) => {
+    if (!sport) return 'Sports';
+    
+    const sportNames: { [key: string]: string } = {
+      'football': 'Football',
+      'golf-boys': 'Boys Golf',
+      'golf-girls': 'Girls Golf',
+      'boys-soccer': 'Boys Soccer',
+      'girls-soccer': 'Girls Soccer',
+      'boys-cross-country': 'Boys Cross Country',
+      'girls-cross-country': 'Girls Cross Country',
+      'volleyball': 'Volleyball'
+    };
+    
+    return sportNames[sport] || sport;
+  };
+  const [statsData, setStatsData] = useState<{ [sport: string]: { [division: string]: TeamStats[] } }>({});
+  const [playerStatsData, setPlayerStatsData] = useState<{ [sport: string]: { [division: string]: PlayerStats[] } }>({});
+  const [schools, setSchools] = useState<School[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<string>('');
+
+  // Load stats for the selected sport
+  const loadStatsForSport = async (sport: string) => {
+    if (statsData[sport]) return; // Already loaded
+    
+    setStatsLoading(true);
+    try {
+      console.log('Loading stats for sport:', sport);
+      const stats = await getStatsForSport(sport);
+      console.log('Loaded stats data:', stats);
+      setStatsData(prev => ({ ...prev, [sport]: stats }));
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Load player stats for the selected sport
+  const loadPlayerStatsForSport = async (sport: string) => {
+    if (playerStatsData[sport]) return; // Already loaded
+    
+    try {
+      console.log('Loading player stats for sport:', sport);
+      const response = await fetch(`/api/stats/sport/${sport}`);
+      if (response.ok) {
+        const stats = await response.json();
+        console.log('Loaded player stats data:', stats);
+        
+        // Group stats by division
+        const statsByDivision = stats.reduce((acc: { [division: string]: PlayerStats[] }, stat: PlayerStats) => {
+          if (!acc[stat.division]) {
+            acc[stat.division] = [];
+          }
+          acc[stat.division].push(stat);
+          return acc;
+        }, {});
+        
+        setPlayerStatsData(prev => ({ ...prev, [sport]: statsByDivision }));
+      }
+    } catch (error) {
+      console.error('Error loading player stats:', error);
+    }
+  };
+
+  // Load stats when sport is selected
+  useEffect(() => {
+    if (selectedSport) {
+      loadStatsForSport(selectedSport);
+      loadPlayerStatsForSport(selectedSport);
+    }
+  }, [selectedSport]);
+
+  // Load schools data
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const schoolsData = await getSchools();
+        setSchools(schoolsData);
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+      }
+    };
+    fetchSchools();
+  }, []);
+
+  // Helper function to get static division structure for fallback
+  const getStaticDivisions = (sport: string) => {
+    switch (sport) {
+      case 'football': return footballDivisions;
+      case 'golf-boys': 
+      case 'golf-girls': return golfDivisions;
+      case 'boys-soccer': return boysSoccerDivisions;
+      case 'girls-soccer': return girlsSoccerDivisions;
+      case 'boys-cross-country': return boysCrossCountryClusters;
+      case 'girls-cross-country': return girlsCrossCountryClusters;
+      default: return [];
+    }
+  };
+
+  const statOptions: { [key: string]: string[] } = {
+    'football': ['passing_yards', 'rushing_yards', 'receiving_yards', 'tackles', 'interceptions', 'sacks'],
+    'basketball': ['points', 'rebounds', 'assists', 'steals', 'blocks'],
+    'baseball': ['batting_average', 'hits', 'runs', 'rbis', 'home_runs', 'stolen_bases'],
+    'softball': ['batting_average', 'hits', 'runs', 'rbis', 'home_runs', 'stolen_bases'],
+    'boys-soccer': ['goals', 'assists_soccer', 'saves', 'shutouts'],
+    'girls-soccer': ['goals', 'assists_soccer', 'saves', 'shutouts'],
+  };
+
+  const statLabels: { [key: string]: string } = {
+    'passing_yards': 'Passing Yards',
+    'rushing_yards': 'Rushing Yards',
+    'receiving_yards': 'Receiving Yards',
+    'tackles': 'Tackles',
+    'interceptions': 'Interceptions',
+    'sacks': 'Sacks',
+    'points': 'Points',
+    'rebounds': 'Rebounds',
+    'assists': 'Assists',
+    'steals': 'Steals',
+    'blocks': 'Blocks',
+    'batting_average': 'Batting Average',
+    'hits': 'Hits',
+    'runs': 'Runs',
+    'rbis': 'RBIs',
+    'home_runs': 'Home Runs',
+    'stolen_bases': 'Stolen Bases',
+    'goals': 'Goals',
+    'assists_soccer': 'Assists',
+    'saves': 'Saves',
+    'shutouts': 'Shutouts',
+  };
+
+  const getStatValue = (stat: PlayerStats, statType: string): number => {
+    const value = stat[statType as keyof PlayerStats] as number;
+    return value || 0;
+  };
+
+  const formatStatValue = (value: number, statType: string): string => {
+    if (statType === 'batting_average' || statType === 'earned_run_average') {
+      return value.toFixed(3);
+    }
+    return value.toString();
+  };
+
+  // Render player stats for a division
+  const renderPlayerStats = (sport: string, divisionName: string) => {
+    const divisionKey = divisionName.toLowerCase().replace(/\s+/g, '-').replace('division-', '');
+    const playerStats = playerStatsData[sport]?.[divisionKey] || [];
+    
+    if (playerStats.length === 0) {
+      return null;
+    }
+
+    const availableStats = statOptions[sport] || [];
+    if (availableStats.length === 0) {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 text-center">No statistics configured for this sport.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-4">
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Statistic to View:</label>
+          <select
+            value={selectedStat}
+            onChange={(e) => setSelectedStat(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+            <option value="">Choose a statistic</option>
+            {availableStats.map((stat) => (
+              <option key={stat} value={stat}>
+                {statLabels[stat]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedStat && (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2">
+              <h4 className="text-sm font-bold text-white">
+                Top {statLabels[selectedStat]} - {divisionName}
+              </h4>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-gray-600 font-bold">Rank</th>
+                    <th className="px-3 py-2 text-left text-gray-600 font-bold">Player</th>
+                    <th className="px-3 py-2 text-left text-gray-600 font-bold">Team</th>
+                    <th className="px-3 py-2 text-center text-gray-600 font-bold">{statLabels[selectedStat]}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {playerStats
+                    .filter(stat => getStatValue(stat, selectedStat) > 0)
+                    .sort((a, b) => getStatValue(b, selectedStat) - getStatValue(a, selectedStat))
+                    .slice(0, 10)
+                    .map((stat, index) => (
+                      <tr key={stat.id} className={index < 3 ? 'bg-yellow-50' : 'bg-white'}>
+                        <td className="px-3 py-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                            index === 0 ? 'bg-yellow-500' : 
+                            index === 1 ? 'bg-gray-400' : 
+                            index === 2 ? 'bg-amber-600' : 'bg-blue-500'
+                          }`}>
+                            {index + 1}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 font-semibold text-gray-900">{stat.playerName}</td>
+                        <td className="px-3 py-2 text-gray-600">{stat.teamName}</td>
+                        <td className="px-3 py-2 text-center font-bold text-blue-600">
+                          {formatStatValue(getStatValue(stat, selectedStat), selectedStat)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render dynamic stats table with real data
+  const renderStatsTable = (sport: string) => {
+    const sportStats = statsData[sport];
+    const staticDivisions = getStaticDivisions(sport);
+    
+    if (statsLoading) {
+      return (
+        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p className="text-primary-600">Loading team statistics...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Merge static division structure with dynamic stats and sort teams by performance
+    const divisionsWithStats = staticDivisions.map(division => {
+      const divisionKey = `division-${division.name.toLowerCase().replace(/\s+/g, '-').replace('division-', '')}`;
+      const divisionStats = sportStats?.[divisionKey] || [];
+      
+      // Create a map of team stats for quick lookup
+      const statsMap = divisionStats.reduce((acc, stat) => {
+        acc[stat.teamName] = stat;
+        return acc;
+      }, {} as { [teamName: string]: TeamStats });
+
+      // Sort teams by performance: win percentage descending, then wins descending
+      const sortedTeams = [...division.teams].sort((teamA, teamB) => {
+        const statsA = statsMap[teamA];
+        const statsB = statsMap[teamB];
+        
+        const winPercentA = statsA?.winPercentage || 0;
+        const winPercentB = statsB?.winPercentage || 0;
+        const winsA = statsA?.wins || 0;
+        const winsB = statsB?.wins || 0;
+        
+        // First sort by win percentage (higher is better)
+        if (winPercentB !== winPercentA) {
+          return winPercentB - winPercentA;
+        }
+        
+        // If win percentages are equal, sort by total wins (higher is better)
+        return winsB - winsA;
+      });
+
+      return {
+        ...division,
+        teams: sortedTeams,
+        statsMap
+      };
+    });
+
+    // For all sports, use 2-column grid layout with centered last division if odd number
+    return (
+      <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mt-4 overflow-x-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {divisionsWithStats.map((division: any, index: number) => {
+            // If this is the last division and there's an odd number, center it
+            const isLastDivision = index === divisionsWithStats.length - 1;
+            const isOddNumberOfDivisions = divisionsWithStats.length % 2 === 1;
+            const shouldCenter = isLastDivision && isOddNumberOfDivisions;
+            
+            return (
+              <div 
+                key={division.name} 
+                className={`bg-white rounded-lg border border-green-300 overflow-hidden ${
+                  shouldCenter ? 'md:col-span-2 md:mx-auto md:w-1/2' : ''
+                }`}
+              >
+                <h3 className="text-lg font-extrabold mb-3 pb-2 border-b-2 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-3 py-2">
+                  {division.name}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-green-600">
+                        <th className="px-2 sm:px-3 py-2 text-left text-white font-bold uppercase bg-primary-500 text-xs">Team</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Wins</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Losses</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Overall</th>
+                        <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Win %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {division.teams.map((team: string, idx: number) => {
+                        const teamStats = division.statsMap[team];
+                        const wins = teamStats?.wins || 0;
+                        const losses = teamStats?.losses || 0;
+                        const overall = teamStats?.overall || `${wins}-${losses}`;
+                        const winPercent = teamStats?.winPercentage || 0;
+                        
+                        return (
+                          <tr
+                            key={team}
+                            className={
+                              `even:bg-orange-50 odd:bg-green-50` +
+                              (idx !== division.teams.length - 1 ? ' border-b border-orange-200' : '')
+                            }
+                          >
+                            <td className="px-2 sm:px-3 py-2 font-semibold text-green-900 whitespace-nowrap text-xs">{team}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{wins}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{losses}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{overall}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-green-700 font-bold text-xs">{winPercent.toFixed(3)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Player Statistics Section */}
+                {renderPlayerStats(sport, division.name)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div className="flex flex-col md:flex-row flex-1">
+        {/* Left grid section */}
+        <aside className="w-full md:w-64 bg-white border-r-2 border-primary-200 p-6 flex flex-col min-h-0 md:min-h-[calc(100vh-6rem)]">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-primary-700 mb-2">Sports</h2>
+            <div className="h-0.5 w-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full"></div>
+          </div>
+          
+          <div className="space-y-1 w-full">
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'football' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('football')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Football</span>
+                {selectedSport === 'football' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button className="w-full py-4 px-5 rounded-xl bg-gray-50 text-primary-700 font-semibold text-base hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300 transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <span>Women's Tennis</span>
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'golf-boys' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('golf-boys')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Men's Golf</span>
+                {selectedSport === 'golf-boys' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'golf-girls' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('golf-girls')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Women's Golf</span>
+                {selectedSport === 'golf-girls' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'boys-soccer' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('boys-soccer')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Men's Soccer</span>
+                {selectedSport === 'boys-soccer' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'girls-soccer' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('girls-soccer')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Women's Soccer</span>
+                {selectedSport === 'girls-soccer' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'boys-cross-country' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('boys-cross-country')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Men's Cross Country</span>
+                {selectedSport === 'boys-cross-country' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'girls-cross-country' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('girls-cross-country')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Women's Cross Country</span>
+                {selectedSport === 'girls-cross-country' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+            
+            <button
+              className={`w-full py-4 px-5 rounded-xl font-semibold text-base transition-all duration-200 ${
+                selectedSport === 'volleyball' 
+                  ? 'bg-primary-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-gray-50 text-primary-700 hover:bg-primary-50 hover:text-primary-800 border border-gray-200 hover:border-primary-300'
+              }`}
+              onClick={() => setSelectedSport('volleyball')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Women's Volleyball</span>
+                {selectedSport === 'volleyball' && (
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                )}
+              </div>
+            </button>
+          </div>
+        </aside>
+        
+        {/* Main content area */}
+        <main className="flex-1 flex flex-col items-center justify-center bg-cream-50 py-8 md:py-16 px-2 sm:px-4">
+                  <h1 className="text-3xl font-bold text-primary-600 mb-8">{getSportDisplayName(selectedSport)} - Division Standings and League Leaders</h1>
+          
+          {selectedSport ? (
+            <div className="w-full max-w-6xl space-y-8">
+              {/* Division Leaderboards Section */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-primary-700">
+                  Division Leaderboards
+                </h2>
+                
+                {/* Render the existing division leaderboards */}
+                {(selectedSport === 'boys-cross-country' || selectedSport === 'girls-cross-country') ? (
+                  <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 overflow-x-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(selectedSport === 'boys-cross-country' ? boysCrossCountryClusters : girlsCrossCountryClusters).map((division: any) => {
+                    const divisionKey = `cluster-${division.name.toLowerCase().replace(/\s+/g, '-').replace('cluster-', '')}`;
+                    const divisionStats = statsData[selectedSport]?.[divisionKey] || [];
+                    const statsMap = divisionStats.reduce((acc, stat) => {
+                      acc[stat.teamName] = stat;
+                      return acc;
+                    }, {} as { [teamName: string]: TeamStats });
+
+                    // Sort teams by performance: win percentage descending, then wins descending
+                    const sortedTeams = [...division.teams].sort((teamA, teamB) => {
+                      const statsA = statsMap[teamA];
+                      const statsB = statsMap[teamB];
+                      
+                      const winPercentA = statsA?.winPercentage || 0;
+                      const winPercentB = statsB?.winPercentage || 0;
+                      const winsA = statsA?.wins || 0;
+                      const winsB = statsB?.wins || 0;
+                      
+                      // First sort by win percentage (higher is better)
+                      if (winPercentB !== winPercentA) {
+                        return winPercentB - winPercentA;
+                      }
+                      
+                      // If win percentages are equal, sort by total wins (higher is better)
+                      return winsB - winsA;
+                    });
+
+                    return (
+                      <div key={division.name} className="bg-white rounded-lg border border-green-300 overflow-hidden">
+                        <h3 className="text-lg font-extrabold mb-3 pb-2 border-b-2 border-orange-400 text-orange-400 uppercase tracking-wide bg-primary-500 px-3 py-2">
+                          {division.name}
+                        </h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm">
+                            <thead>
+                              <tr className="bg-green-600">
+                                <th className="px-2 sm:px-3 py-2 text-left text-white font-bold uppercase bg-primary-500 text-xs">Team</th>
+                                <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Wins</th>
+                                <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Losses</th>
+                                <th className="px-2 sm:px-3 py-2 text-center text-white font-bold uppercase bg-primary-500 text-xs">Win %</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sortedTeams.map((team: string, idx: number) => {
+                                const teamStats = statsMap[team];
+                                const wins = teamStats?.wins || 0;
+                                const losses = teamStats?.losses || 0;
+                                const winPercent = teamStats?.winPercentage || 0;
+                                
+                                return (
+                                  <tr
+                                    key={team}
+                                    className={
+                                      `even:bg-orange-50 odd:bg-green-50` +
+                                      (idx !== division.teams.length - 1 ? ' border-b border-orange-200' : '')
+                                    }
+                                  >
+                                    <td className="px-2 sm:px-3 py-2 font-semibold text-green-900 whitespace-nowrap text-xs">{team}</td>
+                                    <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{wins}</td>
+                                    <td className="px-2 sm:px-3 py-2 text-center text-orange-600 font-bold text-xs">{losses}</td>
+                                    <td className="px-2 sm:px-3 py-2 text-center text-green-700 font-bold text-xs">{winPercent.toFixed(3)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : selectedSport === 'volleyball' ? (
+                  <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 overflow-x-auto">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm border border-green-300 rounded-lg overflow-hidden">
+                    <thead>
+                      <tr className="bg-green-600">
+                        <th className="px-2 sm:px-4 py-2 text-left text-white font-bold uppercase bg-primary-500">Team</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Wins</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Losses</th>
+                        <th className="px-2 sm:px-4 py-2 text-center text-white font-bold uppercase bg-primary-500">Win %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {volleyballTeams
+                        .slice()
+                        .sort((teamA, teamB) => {
+                          const statsA = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === teamA);
+                          const statsB = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === teamB);
+                          
+                          const winPercentA = statsA?.winPercentage || 0;
+                          const winPercentB = statsB?.winPercentage || 0;
+                          const winsA = statsA?.wins || 0;
+                          const winsB = statsB?.wins || 0;
+                          
+                          // First sort by win percentage (higher is better)
+                          if (winPercentB !== winPercentA) {
+                            return winPercentB - winPercentA;
+                          }
+                          
+                          // If win percentages are equal, sort by total wins (higher is better)
+                          return winsB - winsA;
+                        })
+                        .map((team: string, idx: number) => {
+                        const teamStats = statsData[selectedSport]?.['division-1']?.find(stat => stat.teamName === team);
+                        const wins = teamStats?.wins || 0;
+                        const losses = teamStats?.losses || 0;
+                        const winPercent = teamStats?.winPercentage || 0;
+                        
+                        return (
+                          <tr
+                            key={team}
+                            className={
+                              `even:bg-orange-50 odd:bg-green-50` +
+                              (idx !== volleyballTeams.length - 1 ? ' border-b-2 border-orange-300' : '')
+                            }
+                          >
+                            <td className="px-2 sm:px-4 py-3 font-semibold text-green-900 whitespace-nowrap">{team}</td>
+                            <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">{wins}</td>
+                            <td className="px-2 sm:px-4 py-3 text-center text-orange-600 font-bold">{losses}</td>
+                            <td className="px-2 sm:px-4 py-3 text-center text-green-700 font-bold">{winPercent.toFixed(3)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              renderStatsTable(selectedSport)
+                )}
+              </div>
+
+              {/* LIAA Power Rankings Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-primary-700 mb-6">
+                  LIAA Power Rankings
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                  {/* Sample top teams - replace with real data */}
+                  {[
+                    { rank: 1, name: "Abington Heights Comets", division: "Division 1", record: "8-0" },
+                    { rank: 2, name: "Scranton Prep Cavaliers", division: "Division 1", record: "7-1" },
+                    { rank: 3, name: "North Pocono Trojans", division: "Division 1", record: "6-2" },
+                    { rank: 4, name: "Valley View Cougars", division: "Division 1", record: "5-3" },
+                    { rank: 5, name: "Delaware Valley Warriors", division: "Division 1", record: "4-4" }
+                  ].map((team) => {
+                    // Find the school data for this team
+                    const school = schools.find(s => 
+                      s.name.toLowerCase().includes(team.name.toLowerCase().split(' ')[0]) ||
+                      team.name.toLowerCase().includes(s.name.toLowerCase())
+                    );
+                    
+                    return (
+                      <div key={team.rank} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-primary-100">
+                        <div className="p-6">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                              team.rank === 1 ? 'bg-yellow-500' : 
+                              team.rank === 2 ? 'bg-gray-400' : 
+                              team.rank === 3 ? 'bg-amber-600' : 'bg-primary-500'
+                            }`}>
+                              {team.rank}
+                            </div>
+                            <div className="flex-shrink-0">
+                              {school?.logoUrl ? (
+                                <img 
+                                  src={school.logoUrl} 
+                                  alt={`${team.name} logo`}
+                                  className="h-16 w-16 object-contain rounded-lg"
+                                  onError={(e) => {
+                                    // Fallback if image fails to load
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              {!school?.logoUrl && (
+                                <div className="h-16 w-16 bg-primary-100 rounded-lg flex items-center justify-center">
+                                  <span className="text-primary-500 text-xs font-medium">LOGO</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <h3 className="text-lg font-bold text-primary-700 mb-2 break-words leading-tight">{team.name}</h3>
+                            <p className="text-primary-500 text-sm mb-2">{team.division}</p>
+                            <div className="text-xl font-bold text-primary-600">{team.record}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* LIAA Leaders Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-primary-700 mb-6">
+                  LIAA Leaders
+                </h2>
+                <div className="text-center py-12">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+
+              {/* Division Statistics Sections */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-primary-700">
+                  Division Statistics
+                </h2>
+                
+                <div className="text-center py-12">
+                  <p className="text-xl font-semibold text-gray-500">Coming Soon!</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg text-primary-500 mb-4">Select a sport to view statistics</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Sports Statistics</h3>
+                <p className="text-blue-700 text-sm">
+                  Choose a sport from the sidebar to view team rankings, individual player statistics, and division standings.
+                </p>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Sports;
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Thompson - Abington Heights</span>
+                            <span className="font-bold text-primary-600">2,847</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Ryan Murphy - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">2,234</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tyler Chen - North Pocono</span>
+                            <span className="font-bold text-primary-600">1,987</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Rushing Yards</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Marcus Johnson - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">1,923</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">David Wilson - Valley View</span>
+                            <span className="font-bold text-primary-600">1,756</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Alex Rodriguez - Delaware Valley</span>
+                            <span className="font-bold text-primary-600">1,432</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-soccer' || selectedSport === 'girls-soccer' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Goals</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Alex Martinez - Valley View</span>
+                            <span className="font-bold text-primary-600">24</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Emma Wilson - Delaware Valley</span>
+                            <span className="font-bold text-primary-600">19</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Ryan O'Connor - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">16</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Assists</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Maya Patel - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">18</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Connor Davis - Abington Heights</span>
+                            <span className="font-bold text-primary-600">15</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sophie Kim - North Pocono</span>
+                            <span className="font-bold text-primary-600">12</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'golf-boys' || selectedSport === 'golf-girls' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Lowest Average</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Connor Davis - Abington Heights</span>
+                            <span className="font-bold text-primary-600">72.3</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sarah Mitchell - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">74.1</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Michael Chen - North Pocono</span>
+                            <span className="font-bold text-primary-600">75.8</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-cross-country' || selectedSport === 'girls-cross-country' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Fastest Times</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Michael Chen - North Pocono</span>
+                            <span className="font-bold text-primary-600">16:42</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jessica Taylor - Valley View</span>
+                            <span className="font-bold text-primary-600">17:15</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Ryan Murphy - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">17:28</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'volleyball' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Kills</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Ashley Rodriguez - Abington Heights</span>
+                            <span className="font-bold text-primary-600">187</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Maya Patel - Scranton Prep</span>
+                            <span className="font-bold text-primary-600">156</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sophie Kim - North Pocono</span>
+                            <span className="font-bold text-primary-600">142</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Assists</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Emma Wilson - Delaware Valley</span>
+                            <span className="font-bold text-primary-600">342</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Alex Martinez - Valley View</span>
+                            <span className="font-bold text-primary-600">298</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Connor Davis - Abington Heights</span>
+                            <span className="font-bold text-primary-600">267</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">Division 1 statistics coming soon...</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Division 2 Stats */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-primary-700 mb-4 flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                    Division 2 Statistics
+                  </h3>
+                  
+                  {selectedSport === 'football' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Passing Yards</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jordan Smith - Mid Valley</span>
+                            <span className="font-bold text-primary-600">1,892</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Casey Johnson - Dunmore</span>
+                            <span className="font-bold text-primary-600">1,654</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Taylor Brown - Honesdale</span>
+                            <span className="font-bold text-primary-600">1,423</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Rushing Yards</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Mike Davis - Lakeland</span>
+                            <span className="font-bold text-primary-600">1,567</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Chris Wilson - West Scranton</span>
+                            <span className="font-bold text-primary-600">1,389</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Nick Rodriguez - Western Wayne</span>
+                            <span className="font-bold text-primary-600">1,234</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-soccer' || selectedSport === 'girls-soccer' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Goals</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jordan Smith - Mid Valley</span>
+                            <span className="font-bold text-primary-600">18</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Casey Johnson - Dunmore</span>
+                            <span className="font-bold text-primary-600">15</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Taylor Brown - Honesdale</span>
+                            <span className="font-bold text-primary-600">13</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'golf-boys' || selectedSport === 'golf-girls' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Lowest Average</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jordan Smith - Mid Valley</span>
+                            <span className="font-bold text-primary-600">78.2</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Casey Johnson - Dunmore</span>
+                            <span className="font-bold text-primary-600">79.5</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Taylor Brown - Honesdale</span>
+                            <span className="font-bold text-primary-600">81.1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-cross-country' || selectedSport === 'girls-cross-country' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Fastest Times</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jordan Smith - Mid Valley</span>
+                            <span className="font-bold text-primary-600">17:45</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Casey Johnson - Dunmore</span>
+                            <span className="font-bold text-primary-600">18:12</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Taylor Brown - Honesdale</span>
+                            <span className="font-bold text-primary-600">18:28</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'volleyball' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Kills</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jordan Smith - Mid Valley</span>
+                            <span className="font-bold text-primary-600">134</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Casey Johnson - Dunmore</span>
+                            <span className="font-bold text-primary-600">118</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Taylor Brown - Honesdale</span>
+                            <span className="font-bold text-primary-600">105</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">Division 2 statistics coming soon...</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Division 3 Stats */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-primary-700 mb-4 flex items-center gap-2">
+                    <div className="w-6 h-6 bg-amber-600 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                    Division 3 Statistics
+                  </h3>
+                  
+                  {selectedSport === 'football' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Passing Yards</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sam Wilson - Carbondale Area</span>
+                            <span className="font-bold text-primary-600">1,456</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Miller - Holy Cross</span>
+                            <span className="font-bold text-primary-600">1,234</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tom Davis - Lackawanna Trail</span>
+                            <span className="font-bold text-primary-600">1,089</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Rushing Yards</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Alex Brown - Riverside</span>
+                            <span className="font-bold text-primary-600">1,234</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Mike Johnson - Susquehanna</span>
+                            <span className="font-bold text-primary-600">1,087</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Chris Smith - Old Forge</span>
+                            <span className="font-bold text-primary-600">956</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-soccer' || selectedSport === 'girls-soccer' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Goals</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sam Wilson - Carbondale Area</span>
+                            <span className="font-bold text-primary-600">14</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Miller - Holy Cross</span>
+                            <span className="font-bold text-primary-600">12</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tom Davis - Lackawanna Trail</span>
+                            <span className="font-bold text-primary-600">10</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'golf-boys' || selectedSport === 'golf-girls' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Lowest Average</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sam Wilson - Carbondale Area</span>
+                            <span className="font-bold text-primary-600">82.4</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Miller - Holy Cross</span>
+                            <span className="font-bold text-primary-600">84.1</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tom Davis - Lackawanna Trail</span>
+                            <span className="font-bold text-primary-600">85.7</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'boys-cross-country' || selectedSport === 'girls-cross-country' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Fastest Times</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sam Wilson - Carbondale Area</span>
+                            <span className="font-bold text-primary-600">18:45</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Miller - Holy Cross</span>
+                            <span className="font-bold text-primary-600">19:12</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tom Davis - Lackawanna Trail</span>
+                            <span className="font-bold text-primary-600">19:28</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedSport === 'volleyball' ? (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-2">Kills</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sam Wilson - Carbondale Area</span>
+                            <span className="font-bold text-primary-600">98</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Jake Miller - Holy Cross</span>
+                            <span className="font-bold text-primary-600">87</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Tom Davis - Lackawanna Trail</span>
+                            <span className="font-bold text-primary-600">76</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500">Division 3 statistics coming soon...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg text-primary-500 mb-4">Select a sport to view statistics</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Sports Statistics</h3>
+                <p className="text-blue-700 text-sm">
+                  Choose a sport from the sidebar to view team rankings, individual player statistics, and division standings.
+                </p>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Sports; 

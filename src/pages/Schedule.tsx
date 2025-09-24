@@ -109,11 +109,6 @@ const Schedule = () => {
                 <div className="text-center py-8">
                   <div className="text-white text-lg mb-2 font-semibold">No live games right now</div>
                   <div className="text-green-100 text-sm">Check back later for live action!</div>
-                  <div className="mt-4 p-3 bg-green-700 rounded-lg border border-green-600">
-                    <p className="text-xs text-green-100">
-                      <strong>Tip:</strong> Live games appear here when they have a status of "LIVE" in the database.
-                    </p>
-                  </div>
                 </div>
               ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 overflow-y-auto">
