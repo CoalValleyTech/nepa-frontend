@@ -72,8 +72,8 @@ interface LIAAStatsFormData {
   averageTime?: string;
   
   // Wrestling stats
-  wins?: number;
-  losses?: number;
+  wrestlingWins?: number;
+  wrestlingLosses?: number;
   pins?: number;
   technicalFalls?: number;
   majorDecisions?: number;
@@ -572,8 +572,8 @@ const AdminAddStats = () => {
                 <label className="block text-sm font-medium text-primary-700 mb-1">Wins</label>
                 <input
                   type="number"
-                  name="wins"
-                  value={formData.wins || ''}
+                  name="wrestlingWins"
+                  value={formData.wrestlingWins || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
@@ -582,8 +582,8 @@ const AdminAddStats = () => {
                 <label className="block text-sm font-medium text-primary-700 mb-1">Losses</label>
                 <input
                   type="number"
-                  name="losses"
-                  value={formData.losses || ''}
+                  name="wrestlingLosses"
+                  value={formData.wrestlingLosses || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />

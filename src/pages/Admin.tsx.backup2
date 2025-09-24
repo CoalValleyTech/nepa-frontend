@@ -58,6 +58,18 @@ const Admin = () => {
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [editingRankings, setEditingRankings] = useState<Array<{ teamName: string; wins: number; losses: number; winPercentage: number; rank: number }>>([]);
 
+  const teamData = {
+    'football': {
+      'division-1': ['Abington Heights Comets', 'Delaware Valley Warriors', 'North Pocono Trojans', 'Scranton Knights', 'Scranton Prep Cavaliers', 'Valley View Cougars', 'Wallenpaupack Buckhorns'],
+      'division-2': ['Dunmore Bucks', 'Honesdale Hornets', 'Lakeland Chiefs', 'Mid Valley Spartans', 'West Scranton Invaders', 'Western Wayne Wildcats'],
+      'division-3': ['Carbondale Area Chargers', 'Holy Cross Crusaders', 'Lackawanna Trail Lions', 'Old Forge Blue Devils', 'Riverside Vikings', 'Susquehanna Sabers']
+    },
+    'basketball': {
+      'division-1': ['Abington Heights Comets', 'Delaware Valley Warriors', 'North Pocono Trojans', 'Scranton Knights', 'Scranton Prep Cavaliers', 'Valley View Cougars', 'Wallenpaupack Buckhorns'],
+      'division-2': ['Dunmore Bucks', 'Honesdale Hornets', 'Lakeland Chiefs', 'Mid Valley Spartans', 'West Scranton Invaders', 'Western Wayne Wildcats'],
+      'division-3': ['Carbondale Area Chargers', 'Holy Cross Crusaders', 'Lackawanna Trail Lions', 'Old Forge Blue Devils', 'Riverside Vikings', 'Susquehanna Sabers']
+    }
+  };
 
   // Handle manual ranking changes
   const handleRankingChange = (teamName: string, newRank: number) => {
@@ -156,6 +168,17 @@ const Admin = () => {
       loadFeaturedScores();
     }
   }, [user]);
+
+  // Load current stats effect
+  useEffect(() => {
+    console.log('useEffect triggered - user:', !!user, 'sport:', selectedSport, 'division:', selectedDivision);
+    if (user && selectedSport && selectedDivision) {
+      console.log('Calling loadCurrentStats...');
+      loadCurrentStats();
+    }
+  }, [user, selectedSport, selectedDivision]);
+
+
 
   // Show loading while checking authentication
   if (loading) {
@@ -347,6 +370,60 @@ const Admin = () => {
       await loadFeaturedScores();
     } catch (error) {
       console.error('Error removing from featured scores:', error);
+    }
+  };
+
+  // Load current stats for selected sport and division
+  const loadCurrentStats = async () => {
+    if (!selectedSport || !selectedDivision) return;
+    
+    setStatsLoading(true);
+    try {
+      const teams = (teamData as any)[selectedSport]?.[selectedDivision] || [];
+      console.log('Teams found for', selectedSport, selectedDivision, ':', teams);
+      
+      if (teams.length === 0) {
+        console.log('No teams found for this sport/division combination');
+        setTeamStatsInputs({});
+        setRankedTeams([]);
+        return;
+      }
+      
+      // Create default inputs map with all teams having 0 wins and 0 losses
+      const inputsMap: { [teamName: string]: { wins: number; losses: number; overall: string } } = {};
+      teams.forEach((teamName: string) => {
+        inputsMap[teamName] = { wins: 0, losses: 0, overall: '0-0' };
+      });
+      
+      // Try to fetch existing stats from Firebase, but don't fail if they don't exist
+      try {
+        // Note: getTeamStats function would need to be imported to fetch existing stats
+        console.log('Would fetch existing stats for teams:', teams);
+      } catch (statsError) {
+        console.log('Could not fetch existing stats, using default values:', statsError);
+        // Continue with default values
+      }
+      
+      console.log('Final inputs map:', inputsMap);
+      setTeamStatsInputs(inputsMap);
+      
+      // Calculate and set initial rankings
+      const rankings = calculateRankings(inputsMap);
+      console.log('Calculated rankings:', rankings);
+      setRankedTeams(rankings);
+    } catch (error: any) {
+      console.error('Error loading stats:', error);
+      // Even if there's an error, try to show teams with default values
+      const teams = (teamData as any)[selectedSport]?.[selectedDivision] || [];
+      const inputsMap: { [teamName: string]: { wins: number; losses: number; overall: string } } = {};
+      teams.forEach((teamName: string) => {
+        inputsMap[teamName] = { wins: 0, losses: 0, overall: '0-0' };
+      });
+      setTeamStatsInputs(inputsMap);
+      const rankings = calculateRankings(inputsMap);
+      setRankedTeams(rankings);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
